@@ -73,6 +73,7 @@ Additions in 1.8 :
 - Added support for Unity 4 AudioClip assets
 - Fixed the asset dump for MonoBehaviours (which still doesn't include the script-specific data)
 - Added a Unity 5.2.0f3 type database (which HAS to be used for new Texture2D assets)
+- Fixed the Unity 4 type database
 - Added .unity3d unpacking functionality (but not packing; if you want to use such a webplayer game, you can export it to a standalone one; I can give you instructions on how to do that)
 - Fixed the Info button for bundles (it now shows the asset list from the selected assets' point of view)
 - Improved the TreeView performance (quadratic vs. linear creation time)
