@@ -77,3 +77,12 @@ Additions in 1.8 :
 - Added .unity3d unpacking functionality (but not packing; if you want to use such a webplayer game, you can export it to a standalone one; I can give you instructions on how to do that)
 - Fixed the Info button for bundles (it now shows the asset list from the selected assets' point of view)
 - Improved the TreeView performance (quadratic vs. linear creation time)
+
+
+Additions in 1.8b :
+- Greatly improved the asset list creation performance
+- Fixed a minor memory leak in Texture2D (when converting the texture data fails, it now also frees the memory)
+
+
+Addition in 1.8c :
+- Fixed the UV channels for some meshes and fixed the V orientation.
