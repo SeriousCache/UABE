@@ -86,3 +86,10 @@ Additions in 1.8b :
 
 Addition in 1.8c :
 - Fixed the UV channels for some meshes and fixed the V orientation.
+
+Additions in 1.8.1 :
+- Added Unity 5.3 bundle support (LZ4 and uncompressed tested, LZMA not tested)
+- Added a Unity 5.3.1p3 type database
+- Added LZMA (default) or LZ4 compression for type databases
+- Fixed bundle file operations after closing an info dialog
+- Fixed negative signed integer values in the dump (int8, int16, int32)
