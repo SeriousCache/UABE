@@ -93,3 +93,4 @@ Additions in 1.8.1 :
 - Added LZMA (default) or LZ4 compression for type databases
 - Fixed bundle file operations after closing an info dialog
 - Fixed negative signed integer values in the dump (int8, int16, int32)
+- Fixed RGBA4444 Texture2D exporting
