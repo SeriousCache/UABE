@@ -94,3 +94,15 @@ Additions in 1.8.1 :
 - Fixed bundle file operations after closing an info dialog
 - Fixed negative signed integer values in the dump (int8, int16, int32)
 - Fixed RGBA4444 Texture2D exporting
+
+Additions in 1.9 :
+- Created a type database package file format in order to automatically choose the right type database and to reduce the file sizes
+- Added support for many new texture formats (mainly mobile compressed ones and floating point) and fixed the 16bit formats
+- Added a compression quality selection when editing a texture (not for DXT)
+- Added a type database package editor
+- Added support for streamed Texture2D (starting with Unity 5.3)
+- Fixed bundle reading for Unity 5.3 bundles with LZMA
+- Fixed modifying bundles
+- Fixed batch exporting through plugins when there are multiple assets with the same name
+- Increased the opened file limit to 2048 to improve support for some mobile games with many .assets and split files
+- Added support for split .assets (only as a dependency of a non-split file)
