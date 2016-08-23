@@ -106,3 +106,36 @@ Additions in 1.9 :
 - Fixed batch exporting through plugins when there are multiple assets with the same name
 - Increased the opened file limit to 2048 to improve support for some mobile games with many .assets and split files
 - Added support for split .assets (only as a dependency of a non-split file)
+
+Additions in 2.0 :
+- Added a mod installer and mod installer editor, so any changes can directly be saved to a installer or a package file
+- Added the feature to reload a previous state from a package file
+- Allowed directly doing changes to assets in bundles to remove the need of exporting/importing the .assets file
+- Added support for opening multiple independent .assets files
+- Recreated the bundle file writer (it's now in AssetsTools along with BundleReplacer); I tested it a lot but it might still have some new issues
+- Fixed some issues when adding new assets
+- Added format 8 support (Unity 3.1+/also 3.0?)
+- Added type databases for Unity 3.4 - 5.4
+- Added a "modified" indicator in the asset list, and made Export options directly see the changes
+- Added a plugin to export/import TerrainData to/from .raw, as supported by Unity
+- Added a plugin for 7dtd's umaplayer UMAMesh to .obj
+- Improved the Mesh plugin, with better support for U4 and U5 (hopefully it fixes most of the export issues)
+- Improved the AudioClip plugin's FMOD sound bank export, removing the sample granularity and the inflexible sample rate.
+- Added big endian readonly support; Writing would corrupt the file
+- Allowed the AudioClip plugin to export .m4a files as used in WebGL games
+- Improved asset search (direction, start from selection)
+- Added support for streamed Unity 4 AudioClips
+- Added more validity checks for .assets files, reducing freezes for invalid files
+- Added "Would you like to save" warnings
+- Fixed writing uncompressed type databases without huge null blocks
+- Added batch export for raw or dump files
+- Changed import raw to load the asset into memory if possible, not blocking the file anymore
+- Fixed some charset issues, UTF16 is now used instead of UTF8 on ANSI functions in some instances
+- Fixed some small memory leaks
+- Improved the type database and package editors and fixed some string to int related bugs
+- Fixed exporting v6 bundles with an uncompressed file table but with compressed blocks
+- Fixed exporting v6 bundles with the file table at the end
+- Fixed the MovieTexture plugin (not sure if it was already bugged in 1.9)
+- Fixed creating dumps of some assets, such as TerrainData
+- Added support for split .resource / .resS files
+- Fixed some cases where AudioClip/Texture2D can't export from .resource/.resS
