@@ -56,3 +56,29 @@ You can find new versions here: https://7daystodie.com/forums/showthread.php?226
 - 32: https://www.dropbox.com/s/29nq71hmf7n3wg5/AssetsBundleExtractor_1.6c_32bit.zip?dl=0
 - 64: https://mega.nz/#!TdojESbB!4SK5z_lBlVWUHdwZ7QERJd7kV4cFMjCLXQBZexDCmeQ
 - 64: https://www.dropbox.com/s/ze7jsdop0mnzygg/AssetsBundleExtractor_1.6c_64bit.zip?dl=0
+
+1.7
+- 32: https://mega.nz/#!jBIxjKBR!a-zWwkDxJNIiqF_cBiny1ebJ8Y23swrmJhI_h_S81kg
+- 32: https://www.dropbox.com/s/jpdvjd3tehpn2nm/AssetsBundleExtractor_1.7_32bit.zip?dl=0
+- 64: https://mega.nz/#!vQoBkApZ!Ar_vlrN3TfWhz4rMxvE4Ws3pC_5iJDgJeWkCUGp_ODU
+- 64: https://www.dropbox.com/s/749p3n7k5ym9af9/AssetsBundleExtractor_1.7_64bit.zip?dl=0
+
+1.8
+- 32: https://mega.nz/#!uBRTCJKY!MTFUgksl_AbFuFimMPkT9m9buAfF1ifMLgqJynDI-Og
+- 32: https://www.dropbox.com/s/vnanevizp3qk52d/AssetsBundleExtractor_1.8_32bit.zip?dl=0
+- 64: https://mega.nz/#!3BJkhKzK!gM7wxPjNrWIZ1DHLRCCfPIeO-DOZbONNwSx_10MWPbU
+- 64: https://www.dropbox.com/s/ofs4j41zsfvi0ix/AssetsBundleExtractor_1.8_64bit.zip?dl=0
+
+1.8b
+- 32: https://mega.nz/#!uZhQ2T5D!Tb_990VhdLRn8OhFgR6SZUqExgxP3Hdp9AIPDfeMAa8
+- 32: https://www.dropbox.com/s/ojk6sun9c8prh1c/AssetsBundleExtractor_1.8b_32bit.zip?dl=0
+- 64: https://mega.nz/#!TZBBkAgD!mG8hPDxOFGpQZCKZsqODvl5uDdDyfo2h1aXfDZnBPMM
+- 64: https://www.dropbox.com/s/3g03amuxm1ciqyq/AssetsBundleExtractor_1.8b_64bit.zip?dl=0
+
+1.8c
+- 32: https://mega.nz/#!3NY0WJpa!xZEieRf-dDYuOedOdOw5UobQP8RquDQJL6Y9ZHsggzM
+- 32: https://www.dropbox.com/s/gulkc8jyrld3eun/AssetsBundleExtractor_1.8c_32bit.zip?dl=0
+- 64: https://mega.nz/#!qBhXgRgb!eR99KF3WXd1SvT5BlIwBSIrYNJ6viNMf2jTRTQy8ggk
+- 64: https://www.dropbox.com/s/kese2fhu4q8hsx5/AssetsBundleExtractor_1.8c_64bit.zip?dl=0
+
+Note that you have to replace classdata_0E with classData_0E_5.0.1f1 if you use the Texture plugin for any Unity version before 5.2 (only applies to older UABE versions without classdata.tpk)
