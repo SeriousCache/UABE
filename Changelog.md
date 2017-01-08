@@ -139,3 +139,23 @@ Additions in 2.0 :
 - Fixed creating dumps of some assets, such as TerrainData
 - Added support for split .resource / .resS files
 - Fixed some cases where AudioClip/Texture2D can't export from .resource/.resS
+
+Addition in 2.0b :
+- Use the type package even for asset bundle file tables, seemingly the type information isn't always stored.
+
+Additions in 2.1 :
+- Add Unity 5.5 (format 16/17) .assets file support.
+- Add Unity 5.5.0f3 type database.
+- Fix hidden assets added with File->Add when closing the asset list and pressing Info again (for bundles) or when loading an installer package.
+- Add a dependency view dialog (View->Dependencies) that lists all listed .assets files with their absolute File IDs and their direct dependencies with relative File IDs.
+- Improve support for split .assets files, .split0 files can now be opened directly.
+- Add support for BC4,BC5,BC6H and BC7 texture formats (added in U5.5) with different compression settings and decompression.
+- Add file name suggestions for asset export options.
+- Fix writing some format 6 AssetBundles with UnityWeb header and flag 0x100 set.
+- Add a SubstanceArchive plugin that can export .sbsasm files but not the .xml file.
+- Calculate type hashes and fill out type tree when adding new asset types to format 16/17 files.
+- Small TextAsset plugin fixes.
+- Fix a possible crash when resolving a conflict caused by an installer package import in the installer maker.
+- API: Remove two console outputs in MakeTextureData and GetTextureData.
+- Fix exporting dumps of MonoBehaviours with no type tree stored in the .assets file.
+- Fix some potential issues when trying to locate streamed resources.
