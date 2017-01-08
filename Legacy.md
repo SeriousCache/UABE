@@ -81,4 +81,20 @@ You can find new versions here: https://7daystodie.com/forums/showthread.php?226
 - 64: https://mega.nz/#!qBhXgRgb!eR99KF3WXd1SvT5BlIwBSIrYNJ6viNMf2jTRTQy8ggk
 - 64: https://www.dropbox.com/s/kese2fhu4q8hsx5/AssetsBundleExtractor_1.8c_64bit.zip?dl=0
 
+1.8.1
+- 32: https://mega.nz/#!mRwWmZiS!6R1-iXbtGnkgVgF3Dzr_OBsZ77dovS972ex7SiLZMOE
+- 32: https://www.dropbox.com/s/8ol6ape3x30iz7t/AssetsBundleExtractor_1.8.1_32bit.zip?dl=0
+- 64: https://mega.nz/#!qFJD0YAB!rn-jNYYMJbMIhThC7xW5h735-8J6TcI8sn2IsOSgQ7Y
+- 64: https://www.dropbox.com/s/fohectguzmvyxna/AssetsBundleExtractor_1.8.1_64bit.zip?dl=0
+
+5.1.1p3 type database (for 7dtd A12.5)
+- dl: https://mega.nz/#!vNgyXaZD!LqYiN18KENXa-bmaWtwD0p1b51B25WblCJiMMMc-fEc
+- dl: https://www.dropbox.com/s/4n06erqsytfipu5/classdata_5.1.1p3.zip?dl=0
+
 Note that you have to replace classdata_0E with classData_0E_5.0.1f1 if you use the Texture plugin for any Unity version before 5.2 (only applies to older UABE versions without classdata.tpk)
+
+1.9
+- 32: https://mega.nz/#!iBpWwLyC!w88lKqRBA0n9AMa8BSokIRSRXQh51bPjTBDQCU8cQAI
+- 32: https://www.dropbox.com/s/x1jvso1f97vfsyl/AssetsBundleExtractor_1.9_32bit.zip?dl=0
+- 64: https://mega.nz/#!XRRRURJR!dessOauxznx_nnOtDCSOC0UfXDO1EataDG6WmpkroCc
+- 64: https://www.dropbox.com/s/o00uf6u8sovocib/AssetsBundleExtractor_1.9_64bit.zip?dl=0
