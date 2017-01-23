@@ -159,3 +159,6 @@ Additions in 2.1 :
 - API: Remove two console outputs in MakeTextureData and GetTextureData.
 - Fix exporting dumps of MonoBehaviours with no type tree stored in the .assets file.
 - Fix some potential issues when trying to locate streamed resources.
+
+Addition in 2.1b :
+- Fix a bug in writing the type information of Unity 5.5 .assets files.
