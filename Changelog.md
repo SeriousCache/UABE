@@ -162,3 +162,6 @@ Additions in 2.1 :
 
 Addition in 2.1b :
 - Fix a bug in writing the type information of Unity 5.5 .assets files.
+
+Addition in 2.1c :
+- Fix another bug in reading and writing the type information of Unity 5.5 .assets files.
