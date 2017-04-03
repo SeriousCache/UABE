@@ -165,3 +165,10 @@ Addition in 2.1b :
 
 Addition in 2.1c :
 - Fix another bug in reading and writing the type information of Unity 5.5 .assets files.
+
+Additions in 2.1d :
+- Fix another bug in writing the type information of Unity 5.5 .assets files.
+- Fix a bug causing the last character of strings in asset dumps before \n or \r to be cut off.
+- Fixed the suggested file path name for the XP dialog fallback.
+- Improved performance of batch dump export.
+- Fix a bug causing ResourceManager names to be applied to File ID 0's assets if the .assets files that contain the targeted assets aren't loaded.
