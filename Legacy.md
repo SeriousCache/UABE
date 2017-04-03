@@ -98,3 +98,17 @@ Note that you have to replace classdata_0E with classData_0E_5.0.1f1 if you use 
 - 32: https://www.dropbox.com/s/x1jvso1f97vfsyl/AssetsBundleExtractor_1.9_32bit.zip?dl=0
 - 64: https://mega.nz/#!XRRRURJR!dessOauxznx_nnOtDCSOC0UfXDO1EataDG6WmpkroCc
 - 64: https://www.dropbox.com/s/o00uf6u8sovocib/AssetsBundleExtractor_1.9_64bit.zip?dl=0
+
+2.0
+- 32: https://mega.nz/#!rB5Rnb5K!b2KpAInDbri16hrQYnOMljPoChrebOVvfyjxOb9MKaI
+- 32: https://www.dropbox.com/s/2vjenfn0c2ihbm7/AssetsBundleExtractor_2.0_32bit.zip?dl=0
+- 64: https://mega.nz/#!rBARWQzR!uqvS21k45XHAeWOFxtI-trg4wWT335M3FV3FTLG8THI
+- 64: https://www.dropbox.com/s/39z7zyctsdaekyk/AssetsBundleExtractor_2.0_64bit.zip?dl=0
+
+7dtd UMAMesh plugin for 2.0
+- 32/64: https://mega.nz/#!eVYDUYLS!POqaBKQKWevZRmJBrWYcglqXDho5UDIkIrdfvI748ps
+- 32/64: https://www.dropbox.com/s/53pa70rcdlzrb6j/UMAMesh%20Plugin.zip?dl=0
+
+2.0b bugfix, download 2.0 first
+- 32/64 : https://mega.nz/#!fBgQCKKI!47kkOVbe7vRnM8yGt5I4tj4se-zLCpVDeKkPMa43bds
+- 32/64 : https://www.dropbox.com/s/emdbuthaiv5kkvl/AssetsBundleExtractor_2.0b.zip?dl=0
