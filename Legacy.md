@@ -1,5 +1,7 @@
 You can find new versions here: https://7daystodie.com/forums/showthread.php?22675-Unity-Assets-Bundle-Extractor
 
+## Application releases
+
 1.0 
 - 32/64: https://mega.co.nz/#!aNhz2ZAJ!PmhuWkO2Od7ek2yDLervxOrBM1BFmcxb039TLYItFfk
 - 32/64: https://www.dropbox.com/s/x356s4pp1o9iied/AssetsBundleExtractor_1.0.zip?dl=0
@@ -134,3 +136,30 @@ Note that you have to replace classdata_0E with classData_0E_5.0.1f1 if you use 
 5.6.0f3 type package (for 2.1d): 
 - https://mega.nz/#!uAZmFQoI!pGmIUQyvP5i1bpPOd9eTYDRGafXL0FCrIAPVSMZjPCg
 - https://www.dropbox.com/s/7lb77s8z6ckfq01/classdata%205.6.0f3.zip?dl=0
+
+
+## API releases
+
+1.9 API
+- https://mega.nz/#!yEIFzYRa!zW482wlJqaMCC3bt2sw5ua_By4ywrA5WpJTnlfWzK_k
+- https://www.dropbox.com/s/btlfd5cbquffna0/AssetsToolsAPI_1.9.zip?dl=0
+
+2.0 API
+- https://mega.nz/#!LcxFUDgY!LbR4wZ6mYuv8k0PWMnFcTaFh4AVNr0Z6ylJZJka-_ww
+- https://www.dropbox.com/s/mhq0ergi91bw1xu/AssetsToolsAPI_2.0.zip?dl=0
+
+2.1b API
+- https://mega.nz/#!nRw1nZIL!ndMf5hd1_A8qVztRGvsFxTwA8H2zSPZ3TMepjaS5zkE
+- https://www.dropbox.com/s/wdhte4ayj9vw93c/UABE_API_2.1.zip?dl=0
+
+2.1c API
+- https://mega.nz/#!XMYkgIJK!yEGXF46ntLO3-9O3rt2AMIF3dJp0A5Yz1xWCcrT6rpk
+- https://www.dropbox.com/s/vdiirsmo3ce9wqr/UABE_API_2.1c.zip?dl=0
+
+Sample Plugin
+- https://mega.nz/#!aVZkVDAC!G7_KC0KrP0d-ZLiroZTuUKQMEHNEtEds3c65i9cq924
+- https://www.dropbox.com/s/q38ond8ke3p3ozi/UABE%20Sample%20Plugin.zip?dl=0
+
+2.1d API 
+- https://mega.nz/#!KV4kiSBT!XKkpc4h9in4iM-eTrzNx1_whzcltU_M_sk5gYkDowlQ
+- https://www.dropbox.com/s/qmwym6bx2py8j4p/UABE_API_2.1d.zip?dl=0
