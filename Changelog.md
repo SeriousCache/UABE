@@ -172,3 +172,36 @@ Additions in 2.1d :
 - Fixed the suggested file path name for the XP dialog fallback.
 - Improved performance of batch dump export.
 - Fix a bug causing ResourceManager names to be applied to File ID 0's assets if the .assets files that contain the targeted assets aren't loaded.
+
+Additions in 2.2 beta1 :
+- Add batch import support for raw assets, dumps, Texture2D, TextAsset, TerrainData and MovieTexture.
+- Add an option to retrieve MonoBehaviour type information from assemblies to create full dumps.
+- Add UABE JSON dump export/import and Unity JsonUtility compatible export.
+- Update plugins for 2017.1.* and 2017.2.*.- Add type databases for 2017.1.0f3 and 2017.2.0f3.
+- Add a new dialog View->Containers.
+- Add a new column "Container" to the asset list to show assets grouped together properly. Base container assets can be searched for.
+- Add progress indicators for opening .assets files and batch export/import.
+- Improve performance massively for very large .assets files (opening files, selecting assets, removing assets, adding assets, plugin options).
+- Support RGB9e5Float HDR, RG16 and R8 texture formats (will still be converted from/to normal SDR RGBA32).
+- Add big endian write support (experimental).
+- Redo AssetsFileReader / AssetsFileWriter interfaces and add experimental support for more than 2045 files.
+- Improve streamed data file lookup.- Add mip map support to the Texture2D plugin.
+- Add compressed mesh support (experimental).
+- Add bundle compression support (LZMA only, experimental).
+- Add multithread DXT1/5 compression support.
+- Use type information to add valid assets with zeroed fields instead of empty ones.
+- Allow entering a type name instead of a type id for the Add Asset dialog.
+- Fix a bug writing .assets files that caused a missing field which in some cases caused further trouble.
+- Improve bundle decompression for LZ4 files by creating a streamed decompression interface.
+- Make AssetTypeInstance more strict on invalid assets or outdated type information (prevent out of memory crashes when trying to view or export dumps of some assets).
+- Rework the plugin interface.
+- Fix a bug importing .txt dumps with long lines.
+- Update the Texture2D edit dialog to and fix a couple of options to represent the asset format properly.
+- Change the default asset list window size.
+- Change the default name format for exports to allow UABE to find the files for batch import.
+- Make the plugin option list double-clickable.
+- Support longer engine version strings.
+- Hide removed assets from unsaved bundles.
+- Use comctrl32 6.0 for the progress indicators, which also changes the look of dialog controls.
+- Fix a couple of small memory leaks.
+- Fix a bug allowing UABE to close before saving bundles.
