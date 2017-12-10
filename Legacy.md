@@ -112,3 +112,25 @@ Note that you have to replace classdata_0E with classData_0E_5.0.1f1 if you use 
 2.0b bugfix, download 2.0 first
 - 32/64 : https://mega.nz/#!fBgQCKKI!47kkOVbe7vRnM8yGt5I4tj4se-zLCpVDeKkPMa43bds
 - 32/64 : https://www.dropbox.com/s/emdbuthaiv5kkvl/AssetsBundleExtractor_2.0b.zip?dl=0
+
+2.1
+- 32 : [URL=https://mega.nz/#!TRZFHIyK!vG82BIaG0FRLYfzOnJhIEYMCyL9GDENKAUrTDieYAvU]here[/URL]
+- 32 : [URL=https://www.dropbox.com/s/ulb9uqlk0pd77bm/AssetsBundleExtractor_2.1_32bit.zip?dl=0]here[/URL]
+- 64 : [URL=https://mega.nz/#!mVQFDTpY!nydtrVtVI3pij6B9JIouukZVrrAW4OBjesLYQGzA4vQ]here[/URL]
+- 64 :[URL=https://www.dropbox.com/s/9iu59lpj76m0m4m/AssetsBundleExtractor_2.1_64bit.zip?dl=0]here[/URL])
+
+2.1b bugfix, download 2.1 first
+- 32/64 : https://mega.nz/#!XNRgnKIa!8nqkrNOAzFl-PpgWRP7XzUGPuDiC-5ihyjEMV2x9ZtM
+- 32/64 : https://www.dropbox.com/s/ebwvutc9t82l1g8/AssetsBundleExtractor_2.1b.zip?dl=0
+
+2.1c bugfix, download 2.1 first
+- 32/64 : https://mega.nz/#!idI21a4J!LdrOt6h_24tTrepV4Gj2vbx_IBFqdRRzQ1qa0UCiXoc
+- 32/64 : https://www.dropbox.com/s/azpmvh9aqs1hy4l/AssetsBundleExtractor_2.1c.zip?dl=0
+
+2.1d bugfix, download 2.1 first
+- 32/64 : https://mega.nz/#!7A4XCJqS!qkP6NiyHC6v1Q54-cksLqRg6FDnm0OIfdfY0gcFs9EU
+- 32/64 : https://www.dropbox.com/s/haousqg0a3n6x1t/AssetsBundleExtractor_2.1d.zip?dl=0
+
+5.6.0f3 type package (for 2.1d): 
+- https://mega.nz/#!uAZmFQoI!pGmIUQyvP5i1bpPOd9eTYDRGafXL0FCrIAPVSMZjPCg
+- https://www.dropbox.com/s/7lb77s8z6ckfq01/classdata%205.6.0f3.zip?dl=0
