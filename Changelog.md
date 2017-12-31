@@ -205,3 +205,12 @@ Additions in 2.2 beta1 :
 - Use comctrl32 6.0 for the progress indicators, which also changes the look of dialog controls.
 - Fix a couple of small memory leaks.
 - Fix a bug allowing UABE to close before saving bundles.
+
+Additions in 2.2 beta2 :
+- Add 2017.3.0f3 support (new class database, updated Texture and Mesh plugins).
+- Fix a memory issue for .txt dumps with many lines larger than 255 bytes.
+- Rework the dependency resolver to support external .assets or streamed data file references from inside a bundle.
+- Fix a crash when trying to compress some texture file formats with mip map support.
+- Fix mip maps of crunched textures.
+- Fix the container name to asset assignment with ResourceManager file tables that have names for multiple File IDs.
+- Fix a crash when an invalid File ID is entered in the Add dialog.
