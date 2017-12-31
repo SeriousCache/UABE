@@ -1,7 +1,7 @@
 # Unity Assets Bundle Extractor
 Unity .assets and AssetBundle editor
 
-UABE is an editor for Unity 3.4+/4/5 .assets and AssetBundle files. It can create standalone mod installers from changes to .assets and/or bundles.
+UABE is an editor for Unity 3.4+/4/5/2017 .assets and AssetBundle files. It can create standalone mod installers from changes to .assets and/or bundles.
 Type information extracted from Unity is used to create and to import asset dumps.
 There are multiple plugins to convert Unity assets from/to common file formats :
 - The Texture plugin can export and import .png and .tga files.
