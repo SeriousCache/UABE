@@ -214,3 +214,16 @@ Additions in 2.2 beta2 :
 - Fix mip maps of crunched textures.
 - Fix the container name to asset assignment with ResourceManager file tables that have names for multiple File IDs.
 - Fix a crash when an invalid File ID is entered in the Add dialog.
+
+Additions in 2.2 beta3 :
+- Add export support for rigged uncompressed meshes to Collada (.dae).
+- Add a type database for 2018.1.1f1.
+- Add support for DXT and ETC crunch formats (2017.3 and newer).
+- Fix issues importing .txt and .json dumps, and enforce exact float and double representations.
+- Fix exporting compressed meshes to .obj.
+- Fix issues when reading split files.
+- Only show texture formats supported by the file's Unity version.
+- Mod Installers : Automatically remove AssetsTools.dll, and (hopefully) fix the racing condition that caused the .exe to stay open sometimes.
+- Allow the MonoBehaviour type tree stealer to fail for some classes if others succeed.
+- Leave bundled .resource files uncompressed (File->Compress) to fix sound issues (untested!)
+- Add an export button for the View->Dependencies dialog.
