@@ -227,3 +227,8 @@ Additions in 2.2 beta3 :
 - Allow the MonoBehaviour type tree stealer to fail for some classes if others succeed.
 - Leave bundled .resource files uncompressed (File->Compress) to fix sound issues (untested!)
 - Add an export button for the View->Dependencies dialog.
+
+Additions in 2.2 beta4 :
+- Add Unity 2017.4 and 2018.2 support.
+- Add LZ4 compression support (experimental), and add a compression dialog for per-file settings.
+- Mesh plugin : Correct the orientation of bind poses and skeleton node transformations.
