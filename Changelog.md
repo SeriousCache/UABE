@@ -232,3 +232,27 @@ Additions in 2.2 beta4 :
 - Add Unity 2017.4 and 2018.2 support.
 - Add LZ4 compression support (experimental), and add a compression dialog for per-file settings.
 - Mesh plugin : Correct the orientation of bind poses and skeleton node transformations.
+
+Additions in 2.2 stable :
+- Add a new 'Add' option for MonoBehaviours.
+- Bundle replacer type information and hashes inside installer packages.
+- Add support for 2018.3; streamed mesh export is not tested.
+- Add a new console command 'applyemip' to apply installer packages.
+- Fix the file order in written bundles to stay the same.
+- Fix the serialized flag for bundles so it is not set on .resS files.
+- Write assets listed in the preload table before others.
+- Fix reading Mesh assets.
+- Fix the window focus after progress dialogs.
+- Improve the errors logged to progress dialogs and make them stay open if an error occured.
+- Improve the MonoBehaviour type retrieve tool for array and List fields.
+- Look for newly added MonoScripts when retrieving MonoBehaviour script info.
+- Fix writing bundles with an installer package loaded.
+- Fix writing multiple .assets files with an installer package loaded.
+- Fix a crash that may occur when adding a new asset in a bundle and reopening the 'Asset info' dialog.
+- Fix a crash when using assets that were added, removed and added again.
+- Fix locating script assemblies in 2018.2 and 3. Also added m_AssemblyName in MonoScript manually to 2018.2 and 3 type databases, since it was missing.
+- Allow setting the field version in the type database editor.
+- Fix removing version targets in the type database editor.
+- Fix version names in classdata.tpk.
+- Fix the file name extension for exported .obj meshes.
+- Improve classdata.tpk compression.
