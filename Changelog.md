@@ -256,3 +256,7 @@ Additions in 2.2 stable :
 - Fix version names in classdata.tpk.
 - Fix the file name extension for exported .obj meshes.
 - Improve classdata.tpk compression.
+
+Additions in 2.2 stable b :
+- Fix Mesh export (again).
+- Fix mip map generation for RGBA32 textures.
