@@ -143,11 +143,29 @@ Note that you have to replace classdata_0E with classData_0E_5.0.1f1 if you use 
 - 64 : https://mega.nz/#!7F4ikYhQ!Gp7Cav270Yi4tp451ZcnboS4KJ5eE6qIqjpKXsC2TXM
 - 64 : https://www.dropbox.com/s/ic3fpb8x9idd3cp/AssetsBundleExtractor_2.2beta1_64bit.zip?dl=0
 
-2.2 beta2 
+2.2 beta2
 - 32 : https://mega.nz/#!bBxWxS5K!bcxdQK9eWeOmkrdOpE7Wc8TECmS-c_Obl4Tnkwqor4g
 - 32 : https://www.dropbox.com/s/qug30txp80tabai/AssetsBundleExtractor_2.2beta2_32bit.zip?dl=0
 - 64 : https://mega.nz/#!vc40jaDD!YGToxSR1_50CxSImzSYtlW4EKB7gXPvkZt5VERLydT8
 - 64 : https://www.dropbox.com/s/48lendp3r8woo9c/AssetsBundleExtractor_2.2beta2_64bit.zip?dl=0
+
+2.2 beta3
+- 32 : https://mega.nz/#!uIJliSJR!puDDDVhjm2aRkmpmD8N0e4digNCZWX5aU0xvBgV3uKE
+- 32 : https://github.com/DerPopo/UABE/releases/download/2.2beta3/AssetsBundleExtractor_2.2beta3_32bit.zip
+- 64 : https://mega.nz/#!eRY3gAAI!wEB5cTEAxtEEbe7jIKroatUxwYtwmcUnCjAzoMBEyCs
+- 64 : https://github.com/DerPopo/UABE/releases/download/2.2beta3/AssetsBundleExtractor_2.2beta3_64bit.zip
+
+2.2 beta4
+- 32 : https://mega.nz/#!qYonmY6S!TJ_W-GIWjkc_qzYhiP1MgqI1flbDsRGi5nkQ97jvXKc
+- 32 : https://github.com/DerPopo/UABE/releases/download/2.2beta4/AssetsBundleExtractor_2.2beta4_32bit.zip
+- 64 : https://mega.nz/#!uR4ViAob!c5Xgt8DY08xDKb1ggyubKhY6utLOQZ3TmMe6aHnn6Bk
+- 64 : https://github.com/DerPopo/UABE/releases/download/2.2beta4/AssetsBundleExtractor_2.2beta4_64bit.zip
+
+2.2 stable 
+- 32 : https://mega.nz/#!bBoDWAKR!LnpINrRmzxj07h-8l-iJoc-nU5VVFJBhnHj-q26GlPQ
+- 32 : https://github.com/DerPopo/UABE/releases/download/2.2stable/AssetsBundleExtractor_2.2stable_32bit.zip
+- 64 : https://mega.nz/#!fEpRGQIC!grmdKuiFKX1DqXtrvlnDCjScUpGgp526d4Aur6Kw-b4
+- 64 : https://github.com/DerPopo/UABE/releases/download/2.2stable/AssetsBundleExtractor_2.2stable_64bit.zip
 
 ## API releases
 
