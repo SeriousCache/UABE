@@ -1,4 +1,4 @@
-You can find new versions here: https://7daystodie.com/forums/showthread.php?22675-Unity-Assets-Bundle-Extractor
+You can find new versions in the GitHub releases and here: https://7daystodie.com/forums/showthread.php?22675-Unity-Assets-Bundle-Extractor
 
 ## Application releases
 
@@ -192,3 +192,7 @@ Sample Plugin
 2.1d API 
 - https://mega.nz/#!KV4kiSBT!XKkpc4h9in4iM-eTrzNx1_whzcltU_M_sk5gYkDowlQ
 - https://www.dropbox.com/s/qmwym6bx2py8j4p/UABE_API_2.1d.zip?dl=0
+
+2.2 beta 3 API
+- https://mega.nz/#!fdJkRaAa!Ry_AL3SmrcVVb1375MTuU7v4D9HfhVN91laseWHs8xA
+- https://github.com/DerPopo/UABE/releases/download/2.2beta3/AssetsToolsAPI_2.2beta3.zip
