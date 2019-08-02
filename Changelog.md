@@ -265,4 +265,8 @@ Additions in 2.2 stable c :
 - Add class databases for 2018.4.5f1 and 2019.1.0f3
 - Support the slightly changed Unity 2019 .assets file format.
 - The mod installer now uses a statically linked AssetsTools.dll to reduce file size and hopefully reduce the amount of false-positives.
-- 
+
+Additions in 2.2 stable d :
+- Add a class database for 2019.2.0f1.
+- Support the updated Unity 2019.2 .assets file format.
+- Make the mod installer close properly after a file dialog was opened.
