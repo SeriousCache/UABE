@@ -11,4 +11,4 @@ There are multiple plugins to convert Unity assets from/to common file formats :
 - The MovieTexture plugin can export and import .ogv (Ogg Theora) files.
 - The TerrainData plugin can export and import .raw files readable by Unity.
 
-You can find the main project page on https://7daystodie.com/forums/showthread.php?22675-Unity-Assets-Bundle-Extractor.
+You can find the main project page on https://community.7daystodie.com/topic/1871-unity-assets-bundle-extractor/.
