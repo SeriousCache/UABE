@@ -1,0 +1,3 @@
+LIBRARY AudioClip
+EXPORTS
+	GetUABEPluginDesc1

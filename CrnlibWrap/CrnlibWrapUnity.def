@@ -1,0 +1,3 @@
+LIBRARY CrnlibWrapUnity
+EXPORTS
+	GetUABEPluginDesc1

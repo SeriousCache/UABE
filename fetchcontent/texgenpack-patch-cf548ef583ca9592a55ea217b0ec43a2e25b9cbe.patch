@@ -1,0 +1,891 @@
+diff --git a/astc.c b/astc.c
+index 1ba68db..22b385e 100644
+--- a/astc.c
++++ b/astc.c
+@@ -108,42 +108,44 @@ void decompress_astc_file(const char *filename, Image *image) {
+ }
+ 
+ void compress_image_to_astc_texture(Image *image, int texture_type, Texture *texture) {
+-	// Create temporary .png filename
+-	char *tmp_filename = tmpnam(NULL);
+-	char *png_filename = (char *)alloca(strlen(tmp_filename) + 5);
+-	strcpy(png_filename, tmp_filename);
+-	strcat(png_filename, ".png");
+-	// Save the image to the file.
+-	save_png_file(image, png_filename);
+-	// Create temporary .astc filename
+-	tmp_filename = tmpnam(NULL);
+-	char *astc_filename = (char *)alloca(strlen(tmp_filename) + 6);
+-	strcpy(astc_filename, tmp_filename);
+-	strcat(astc_filename, ".astc");
+-	// Execute encoding command.
+-	char *s = (char *)malloc(strlen(png_filename) + strlen(astc_filename) + 40);
+-	char *astcenc_speed_option;
+-	if (option_compression_level < SPEED_FAST)
+-		astcenc_speed_option = "-fast";
+-	else if (option_compression_level < SPEED_MEDIUM)
+-		astcenc_speed_option = "-medium";
+-	else if (option_compression_level < SPEED_SLOW)
+-		astcenc_speed_option = "-thorough";
+-	else
+-		astcenc_speed_option = "-exhaustive";
+-	TextureInfo *info = match_texture_type(texture_type);
+-	sprintf(s, "astcenc -c %s %s %dx%d %s -silentmode", png_filename, astc_filename, info->block_width,
+-		info->block_height, astcenc_speed_option);
+-	printf("Executing command %s\n", s);
+-	int r = system(s);
+-	remove(png_filename);
+-	if (r == - 1) {
+-		printf("Error executing command during ASTC encoding.\n");
+-		exit(1);
+-	}
+-	free(s);
+-	// Load the created .astc texture.
+-	load_astc_file(astc_filename, texture);
+-	remove(astc_filename);
++	printf("Error -- astc compression support stripped.\n");
++	exit(1);
++	//// Create temporary .png filename
++	//char *tmp_filename = tmpnam(NULL);
++	//char *png_filename = (char *)alloca(strlen(tmp_filename) + 5);
++	//strcpy(png_filename, tmp_filename);
++	//strcat(png_filename, ".png");
++	//// Save the image to the file.
++	//save_png_file(image, png_filename);
++	//// Create temporary .astc filename
++	//tmp_filename = tmpnam(NULL);
++	//char *astc_filename = (char *)alloca(strlen(tmp_filename) + 6);
++	//strcpy(astc_filename, tmp_filename);
++	//strcat(astc_filename, ".astc");
++	//// Execute encoding command.
++	//char *s = (char *)malloc(strlen(png_filename) + strlen(astc_filename) + 40);
++	//char *astcenc_speed_option;
++	//if (option_compression_level < SPEED_FAST)
++	//	astcenc_speed_option = "-fast";
++	//else if (option_compression_level < SPEED_MEDIUM)
++	//	astcenc_speed_option = "-medium";
++	//else if (option_compression_level < SPEED_SLOW)
++	//	astcenc_speed_option = "-thorough";
++	//else
++	//	astcenc_speed_option = "-exhaustive";
++	//TextureInfo *info = match_texture_type(texture_type);
++	//sprintf(s, "astcenc -c %s %s %dx%d %s -silentmode", png_filename, astc_filename, info->block_width,
++	//	info->block_height, astcenc_speed_option);
++	//printf("Executing command %s\n", s);
++	//int r = system(s);
++	//remove(png_filename);
++	//if (r == - 1) {
++	//	printf("Error executing command during ASTC encoding.\n");
++	//	exit(1);
++	//}
++	//free(s);
++	//// Load the created .astc texture.
++	//load_astc_file(astc_filename, texture);
++	//remove(astc_filename);
+ }
+ 
+diff --git a/decode.h b/decode.h
+index dbd98ca..9944221 100644
+--- a/decode.h
++++ b/decode.h
+@@ -16,6 +16,11 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ 
+ */
+ 
++#ifdef TEXGENPACK_EXPORTS
++#define TEXGENPACK_API __declspec(dllexport) 
++#else
++#define TEXGENPACK_API __declspec(dllimport)
++#endif
+ 
+ // Flags values for the decoding functions.
+ 
+@@ -83,29 +88,29 @@ int get_astc_block_size_height(int astc_block_type);
+ 
+ // Functions defined in bptc.c
+ 
+-int draw_block4x4_bptc(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int block4x4_bptc_get_mode(const unsigned char *bitstring);
+-int draw_block4x4_bptc_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int draw_block4x4_bptc_signed_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int block4x4_bptc_float_get_mode(const unsigned char *bitstring);
+-void block4x4_bptc_set_mode(unsigned char *bitstring, int flags);
+-void block4x4_bptc_float_set_mode(unsigned char *bitstring, int flags);
++TEXGENPACK_API int draw_block4x4_bptc(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int block4x4_bptc_get_mode(const unsigned char *bitstring);
++TEXGENPACK_API int draw_block4x4_bptc_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_bptc_signed_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int block4x4_bptc_float_get_mode(const unsigned char *bitstring);
++TEXGENPACK_API void block4x4_bptc_set_mode(unsigned char *bitstring, int flags);
++TEXGENPACK_API void block4x4_bptc_float_set_mode(unsigned char *bitstring, int flags);
+ // Try to preinitialize colors for particular modes.
+-void bptc_set_block_colors(unsigned char *bitstring, int flags, unsigned int *colors);
++TEXGENPACK_API void bptc_set_block_colors(unsigned char *bitstring, int flags, unsigned int *colors);
+ 
+ // Functions defined in rgtc.c
+ 
+-int draw_block4x4_rgtc1(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int draw_block4x4_signed_rgtc1(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int draw_block4x4_rgtc2(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int draw_block4x4_signed_rgtc2(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_rgtc1(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_signed_rgtc1(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_rgtc2(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_signed_rgtc2(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+ 
+ // Function defined in texture.c.
+ 
+-int draw_block4x4_uncompressed(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int draw_block4x4_argb8(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int draw_block4x4_uncompressed_rgb_half_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int draw_block4x4_uncompressed_rgba_half_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int draw_block4x4_uncompressed_r_half_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+-int draw_block4x4_uncompressed_rg_half_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_uncompressed(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_argb8(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_uncompressed_rgb_half_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_uncompressed_rgba_half_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_uncompressed_r_half_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
++TEXGENPACK_API int draw_block4x4_uncompressed_rg_half_float(const unsigned char *bitstring, unsigned int *image_buffer, int flags);
+ 
+diff --git a/file.c b/file.c
+index f6a53c0..b51d2c4 100644
+--- a/file.c
++++ b/file.c
+@@ -21,7 +21,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ #include <stdio.h>
+ #include <string.h>
+ #include <malloc.h>
+-#include <png.h>
++//#include <png.h>
+ #include "texgenpack.h"
+ #include "decode.h"
+ #include "packing.h"
+@@ -842,204 +842,204 @@ void load_ppm_file(const char *filename, Image *image) {
+ 	fclose(f);
+ }
+ 
+-// Load a .png file.
+-
+-void load_png_file(const char *filename, Image *image) {
+-	int png_width, png_height;
+-	png_byte color_type;
+-	png_byte bit_depth;
+-	png_structp png_ptr;
+-	png_infop info_ptr;
+-	int number_of_passes;
+-	png_bytep *row_pointers;
+-
+-	png_byte header[8];    // 8 is the maximum size that can be checked
+-
+-        FILE *fp = fopen(filename, "rb");
+-	if (!fp) {
+-		printf("Error - file %s could not be opened for reading.\n", filename);
+-		exit(1);
+-	}
+-	fread(header, 1, 8, fp);
+-	if (png_sig_cmp(header, 0, 8)) {
+-		printf("Error - file %s is not recognized as a PNG file.\n", filename);
+-		exit(1);
+-	}
+-
+-	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+-
+-	if (!png_ptr) {
+-		printf("png_create_read_struct failed\n");
+-		exit(1);
+-	}   
+-
+-	info_ptr = png_create_info_struct(png_ptr);
+-	if (!info_ptr) {
+-		printf("png_create_info_struct failed\n");
+-		exit(1);
+-	}
+-
+-	if (setjmp(png_jmpbuf(png_ptr))) {
+-		printf("Error during init_io.");
+-		exit(1);
+-	}
+-
+-	png_init_io(png_ptr, fp);
+-	png_set_sig_bytes(png_ptr, 8);
+-
+-	png_read_info(png_ptr, info_ptr);
+-
+-	png_width = png_get_image_width(png_ptr, info_ptr);
+-	png_height = png_get_image_height(png_ptr, info_ptr);
+-	color_type = png_get_color_type(png_ptr, info_ptr);
+-	bit_depth = png_get_bit_depth(png_ptr, info_ptr);
+-
+-	number_of_passes = png_set_interlace_handling(png_ptr);
+-	png_read_update_info(png_ptr, info_ptr);
+-
+-        /* read file */
+-	if (setjmp(png_jmpbuf(png_ptr))) {
+-		printf("Error during read_image.\n");
+-		exit(1);
+-        }
+-
+-	row_pointers = (png_bytep *)malloc(sizeof(png_bytep) * png_height);
+-	for (int y = 0; y < png_height; y++)
+-		row_pointers[y] = (png_byte *)malloc(png_get_rowbytes(png_ptr, info_ptr));
+-
+-	png_read_image(png_ptr, row_pointers);
+-
+-	fclose(fp);
+-
+-	if (!option_quiet) {
+-		printf("Loading .png image with size (%d x %d), bit depth %d", png_width, png_height, bit_depth);
+-		if (color_type == PNG_COLOR_TYPE_RGBA)
+-			printf(", with alpha.\n");
+-		else
+-			printf(".\n");
+-	}
+-	if (color_type != PNG_COLOR_TYPE_GRAY && color_type != PNG_COLOR_TYPE_RGB && color_type != PNG_COLOR_TYPE_RGBA) {
+-		printf("Error - unrecognized color format.\n");
+-		exit(1);
+-	}
+-	if (bit_depth != 8) {
+-		printf("Error - expected bit depth of 8 in PNG file.\n");
+-		exit(1);
+-	}
+-
+-	image->width = png_width;
+-	image->height = png_height;
+-	// In the current version, extending the image to a 4x4 block boundary is no longer necessary.
+-	image->extended_width = png_width;
+-	image->extended_height = png_height;
+-	image->pixels = (unsigned int *)malloc(image->extended_width * image->extended_height * 4);
+-	image->nu_components = 3;
+-	image->bits_per_component = 8;
+-	image->srgb = 0;
+-	image->is_half_float = 0;
+-	image->is_signed = 0;
+-        // The internal image format after reading a PNG file is always 32 bits per pixel.
+-	if (color_type == PNG_COLOR_TYPE_GRAY) {
+-		image->alpha_bits = 0;
+-                image->nu_components = 1;
+-		for (int y = 0; y < image->height; y++)
+-			for (int x = 0; x < image->width; x++) {
+-                                unsigned int pixel = (unsigned int)*(row_pointers[y] + x) +
+-                                    0xFF000000;
+-				*(image->pixels + y * image->extended_width + x) = pixel;
+-			}
+-        }
+- 	else if (color_type == PNG_COLOR_TYPE_RGB) {
+-		image->alpha_bits = 0;
+-		for (int y = 0; y < image->height; y++)
+-			for (int x = 0; x < image->width; x++) {
+-				memcpy(image->pixels + y * image->extended_width + x, row_pointers[y] + x * 3, 3);
+-				// Set the alpha byte to 0xFF.
+-				*((unsigned char *)&image->pixels[y * image->extended_width + x] + 3) = 0xFF;
+-			}
+-	}
+-	else {
+-		image->alpha_bits = 8;
+-		image->nu_components = 4;
+-		for (int y = 0; y < image->height; y++)
+-		        memcpy(image->pixels + y * image->extended_width, row_pointers[y], image->width * 4);
+-	}
+-	if (image->alpha_bits >= 8) {
+-		check_1bit_alpha(image);
+-		if (image->alpha_bits == 1)
+-			if (!option_quiet)
+-				printf("1-bit alpha detected.\n");
+-	}
+-	pad_image_borders(image);
+-	for (int y = 0; y < png_height; y++)
+-		free(row_pointers[y]);
+-	free(row_pointers);
+-}
+-
+-// Save a .png file.
+-
+-void save_png_file(Image *image, const char *filename) {
+-	FILE *fp;
+-	png_structp png_ptr;
+-	png_infop info_ptr;
+-
+-	if (image->is_half_float) {
+-		convert_image_from_half_float(image, 0, 1.0, 1.0);
+-	}
+-	else
+-	if (image->bits_per_component != 8) {
+-		printf("Error -- cannot write PNG file with non 8-bit components.\n");
+-		exit(1);
+-	}
+-
+-	if (!option_quiet)
+-		printf("Writing .png file %s.\n", filename);
+-	fp = fopen(filename, "wb");
+-	if (fp == NULL) {
+-		printf("Error - file %s could not be opened for writing.\n", filename);
+-		exit(1);
+-	}
+-	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+-	if (png_ptr == NULL) {
+-		printf("Error using libpng.\n");
+-		exit(1);
+-	}
+-	info_ptr = png_create_info_struct(png_ptr);
+-	if (info_ptr == NULL) {
+-		printf("Error using libpng.\n");
+-		exit(1);
+-	}
+-	if (setjmp(png_jmpbuf(png_ptr))) {
+-		/* If we get here, we had a problem writing the file. */
+-		printf("Error writing png file %s.\n", filename);
+-		exit(1);
+-	}
+-	png_init_io(png_ptr, fp);
+-	int t;
+-        if (image->nu_components == 1)
+-		t = PNG_COLOR_TYPE_GRAY;
+-	else if (image->alpha_bits > 0)
+-		t = PNG_COLOR_TYPE_RGBA;
+-	else
+-		t = PNG_COLOR_TYPE_RGB;
+-	png_set_IHDR(png_ptr, info_ptr, image->width, image->height, 8, t,
+-		PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+-
+-	png_write_info(png_ptr, info_ptr);
+-	
+-	if (t == PNG_COLOR_TYPE_GRAY || image->alpha_bits == 0)
+-		// We have RGB (or one component) data in 32-bit pixels with the last byte
+-                // or bytes unused.
+-		png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
+-
+- 	png_byte **row_pointers = (png_byte **)alloca(image->height * sizeof(png_byte *));
+-	for (int y = 0; y < image->height; y++)
+-		row_pointers[y] = (png_byte *)(image->pixels + y * image->extended_width);
+-
+-	png_write_image(png_ptr, row_pointers);
+-
+-	png_write_end(png_ptr, info_ptr);
+-	png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+-	fclose(fp);
+-}
++//// Load a .png file.
++//
++//void load_png_file(const char *filename, Image *image) {
++//	int png_width, png_height;
++//	png_byte color_type;
++//	png_byte bit_depth;
++//	png_structp png_ptr;
++//	png_infop info_ptr;
++//	int number_of_passes;
++//	png_bytep *row_pointers;
++//
++//	png_byte header[8];    // 8 is the maximum size that can be checked
++//
++//        FILE *fp = fopen(filename, "rb");
++//	if (!fp) {
++//		printf("Error - file %s could not be opened for reading.\n", filename);
++//		exit(1);
++//	}
++//	fread(header, 1, 8, fp);
++//	if (png_sig_cmp(header, 0, 8)) {
++//		printf("Error - file %s is not recognized as a PNG file.\n", filename);
++//		exit(1);
++//	}
++//
++//	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
++//
++//	if (!png_ptr) {
++//		printf("png_create_read_struct failed\n");
++//		exit(1);
++//	}   
++//
++//	info_ptr = png_create_info_struct(png_ptr);
++//	if (!info_ptr) {
++//		printf("png_create_info_struct failed\n");
++//		exit(1);
++//	}
++//
++//	if (setjmp(png_jmpbuf(png_ptr))) {
++//		printf("Error during init_io.");
++//		exit(1);
++//	}
++//
++//	png_init_io(png_ptr, fp);
++//	png_set_sig_bytes(png_ptr, 8);
++//
++//	png_read_info(png_ptr, info_ptr);
++//
++//	png_width = png_get_image_width(png_ptr, info_ptr);
++//	png_height = png_get_image_height(png_ptr, info_ptr);
++//	color_type = png_get_color_type(png_ptr, info_ptr);
++//	bit_depth = png_get_bit_depth(png_ptr, info_ptr);
++//
++//	number_of_passes = png_set_interlace_handling(png_ptr);
++//	png_read_update_info(png_ptr, info_ptr);
++//
++//        /* read file */
++//	if (setjmp(png_jmpbuf(png_ptr))) {
++//		printf("Error during read_image.\n");
++//		exit(1);
++//        }
++//
++//	row_pointers = (png_bytep *)malloc(sizeof(png_bytep) * png_height);
++//	for (int y = 0; y < png_height; y++)
++//		row_pointers[y] = (png_byte *)malloc(png_get_rowbytes(png_ptr, info_ptr));
++//
++//	png_read_image(png_ptr, row_pointers);
++//
++//	fclose(fp);
++//
++//	if (!option_quiet) {
++//		printf("Loading .png image with size (%d x %d), bit depth %d", png_width, png_height, bit_depth);
++//		if (color_type == PNG_COLOR_TYPE_RGBA)
++//			printf(", with alpha.\n");
++//		else
++//			printf(".\n");
++//	}
++//	if (color_type != PNG_COLOR_TYPE_GRAY && color_type != PNG_COLOR_TYPE_RGB && color_type != PNG_COLOR_TYPE_RGBA) {
++//		printf("Error - unrecognized color format.\n");
++//		exit(1);
++//	}
++//	if (bit_depth != 8) {
++//		printf("Error - expected bit depth of 8 in PNG file.\n");
++//		exit(1);
++//	}
++//
++//	image->width = png_width;
++//	image->height = png_height;
++//	// In the current version, extending the image to a 4x4 block boundary is no longer necessary.
++//	image->extended_width = png_width;
++//	image->extended_height = png_height;
++//	image->pixels = (unsigned int *)malloc(image->extended_width * image->extended_height * 4);
++//	image->nu_components = 3;
++//	image->bits_per_component = 8;
++//	image->srgb = 0;
++//	image->is_half_float = 0;
++//	image->is_signed = 0;
++//        // The internal image format after reading a PNG file is always 32 bits per pixel.
++//	if (color_type == PNG_COLOR_TYPE_GRAY) {
++//		image->alpha_bits = 0;
++//                image->nu_components = 1;
++//		for (int y = 0; y < image->height; y++)
++//			for (int x = 0; x < image->width; x++) {
++//                                unsigned int pixel = (unsigned int)*(row_pointers[y] + x) +
++//                                    0xFF000000;
++//				*(image->pixels + y * image->extended_width + x) = pixel;
++//			}
++//        }
++// 	else if (color_type == PNG_COLOR_TYPE_RGB) {
++//		image->alpha_bits = 0;
++//		for (int y = 0; y < image->height; y++)
++//			for (int x = 0; x < image->width; x++) {
++//				memcpy(image->pixels + y * image->extended_width + x, row_pointers[y] + x * 3, 3);
++//				// Set the alpha byte to 0xFF.
++//				*((unsigned char *)&image->pixels[y * image->extended_width + x] + 3) = 0xFF;
++//			}
++//	}
++//	else {
++//		image->alpha_bits = 8;
++//		image->nu_components = 4;
++//		for (int y = 0; y < image->height; y++)
++//		        memcpy(image->pixels + y * image->extended_width, row_pointers[y], image->width * 4);
++//	}
++//	if (image->alpha_bits >= 8) {
++//		check_1bit_alpha(image);
++//		if (image->alpha_bits == 1)
++//			if (!option_quiet)
++//				printf("1-bit alpha detected.\n");
++//	}
++//	pad_image_borders(image);
++//	for (int y = 0; y < png_height; y++)
++//		free(row_pointers[y]);
++//	free(row_pointers);
++//}
++//
++//// Save a .png file.
++//
++//void save_png_file(Image *image, const char *filename) {
++//	FILE *fp;
++//	png_structp png_ptr;
++//	png_infop info_ptr;
++//
++//	if (image->is_half_float) {
++//		convert_image_from_half_float(image, 0, 1.0, 1.0);
++//	}
++//	else
++//	if (image->bits_per_component != 8) {
++//		printf("Error -- cannot write PNG file with non 8-bit components.\n");
++//		exit(1);
++//	}
++//
++//	if (!option_quiet)
++//		printf("Writing .png file %s.\n", filename);
++//	fp = fopen(filename, "wb");
++//	if (fp == NULL) {
++//		printf("Error - file %s could not be opened for writing.\n", filename);
++//		exit(1);
++//	}
++//	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
++//	if (png_ptr == NULL) {
++//		printf("Error using libpng.\n");
++//		exit(1);
++//	}
++//	info_ptr = png_create_info_struct(png_ptr);
++//	if (info_ptr == NULL) {
++//		printf("Error using libpng.\n");
++//		exit(1);
++//	}
++//	if (setjmp(png_jmpbuf(png_ptr))) {
++//		/* If we get here, we had a problem writing the file. */
++//		printf("Error writing png file %s.\n", filename);
++//		exit(1);
++//	}
++//	png_init_io(png_ptr, fp);
++//	int t;
++//        if (image->nu_components == 1)
++//		t = PNG_COLOR_TYPE_GRAY;
++//	else if (image->alpha_bits > 0)
++//		t = PNG_COLOR_TYPE_RGBA;
++//	else
++//		t = PNG_COLOR_TYPE_RGB;
++//	png_set_IHDR(png_ptr, info_ptr, image->width, image->height, 8, t,
++//		PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
++//
++//	png_write_info(png_ptr, info_ptr);
++//	
++//	if (t == PNG_COLOR_TYPE_GRAY || image->alpha_bits == 0)
++//		// We have RGB (or one component) data in 32-bit pixels with the last byte
++//                // or bytes unused.
++//		png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
++//
++// 	png_byte **row_pointers = (png_byte **)alloca(image->height * sizeof(png_byte *));
++//	for (int y = 0; y < image->height; y++)
++//		row_pointers[y] = (png_byte *)(image->pixels + y * image->extended_width);
++//
++//	png_write_image(png_ptr, row_pointers);
++//
++//	png_write_end(png_ptr, info_ptr);
++//	png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
++//	fclose(fp);
++//}
+ 
+diff --git a/image.c b/image.c
+index 3358804..4a5accb 100644
+--- a/image.c
++++ b/image.c
+@@ -65,9 +65,9 @@ void load_image(const char *filename, int filetype, Image *image) {
+ //		case FILE_TYPE_PPM :
+ //			load_ppm_file(filename, image);
+ //			break;
+-		case FILE_TYPE_PNG :
+-			load_png_file(filename, image);
+-			break;
++//		case FILE_TYPE_PNG :
++//			load_png_file(filename, image);
++//			break;
+ 		default :
+ 			printf("Error -- no support for loading image file format.\n");
+ 			exit(1);
+@@ -122,9 +122,9 @@ void save_image(Image *image, const char *filename, int filetype) {
+ //	case FILE_TYPE_PPM :
+ //		load_ppm_file(filename, image);
+ //		break;
+-	case FILE_TYPE_PNG :
+-		save_png_file(image, filename);
+-		break;
++//	case FILE_TYPE_PNG :
++//		save_png_file(image, filename);
++//		break;
+ 	default :
+ 		printf("Error -- no support for saving image file format.\n");
+ 		exit(1);
+diff --git a/texgenpack.h b/texgenpack.h
+index 1ed22b9..9440a40 100644
+--- a/texgenpack.h
++++ b/texgenpack.h
+@@ -15,6 +15,11 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ 
+ */
++#ifdef TEXGENPACK_EXPORTS
++#define TEXGENPACK_API __declspec(dllexport) 
++#else
++#define TEXGENPACK_API __declspec(dllimport)
++#endif
+ 
+ #define NU_FILE_TYPES		6
+ 
+@@ -211,70 +216,97 @@ enum {
+ // Slow preset 32 tries per block, nu_generations = 100.
+ #define SPEED_SLOW	(COMPRESSION_LEVEL_CLASS_1 + 24)
+ 
+-extern int command;
+-extern int option_verbose;
+-extern int option_max_threads;
+-extern int option_orientation;
+-extern int option_compression_level;
+-extern int option_progress;
+-extern int option_modal_etc2;
+-extern int option_allowed_modes_etc2;
+-extern int option_generations;
+-extern int option_islands;
+-extern int option_generations_second_pass;
+-extern int option_islands_second_pass;
+-extern int option_texture_format;
+-extern int option_flip_vertical;
+-extern int option_quiet;
+-extern int option_block_width;
+-extern int option_block_height;
+-extern int option_half_float;
+-extern int option_deterministic;
+-extern int option_hdr;
+-extern int option_perceptive;
++#ifdef __cplusplus
++extern "C"
++{
++#endif
++TEXGENPACK_API extern int command;
++TEXGENPACK_API extern int option_verbose;
++TEXGENPACK_API extern int option_max_threads;
++TEXGENPACK_API extern int option_orientation;
++TEXGENPACK_API extern int option_compression_level;
++TEXGENPACK_API extern int option_progress;
++TEXGENPACK_API extern int option_modal_etc2;
++TEXGENPACK_API extern int option_allowed_modes_etc2;
++TEXGENPACK_API extern int option_generations;
++TEXGENPACK_API extern int option_islands;
++TEXGENPACK_API extern int option_generations_second_pass;
++TEXGENPACK_API extern int option_islands_second_pass;
++TEXGENPACK_API extern int option_texture_format;
++TEXGENPACK_API extern int option_flip_vertical;
++TEXGENPACK_API extern int option_quiet;
++TEXGENPACK_API extern int option_block_width;
++TEXGENPACK_API extern int option_block_height;
++TEXGENPACK_API extern int option_half_float;
++TEXGENPACK_API extern int option_deterministic;
++TEXGENPACK_API extern int option_hdr;
++TEXGENPACK_API extern int option_perceptive;
++#ifdef __cplusplus
++}
++#endif
+ 
+ // Defined in image.c
+ 
++#ifdef __cplusplus
++extern "C"
++{
++#endif
+ void load_image(const char *filename, int filetype, Image *image);
+ int load_mipmap_images(const char *filename, int filetype, int max_images, Image *image);
+-void save_image(Image *image, const char *filename, int filetype);
+-double compare_images(Image *image1, Image *image2);
++TEXGENPACK_API void save_image(Image *image, const char *filename, int filetype);
++TEXGENPACK_API double compare_images(Image *image1, Image *image2);
+ int load_texture(const char *filename, int filetype, int max_mipmaps, Texture *texture);
+ void save_texture(Texture *texture, int nu_mipmaps, const char *filename, int filetype);
+-void convert_texture_to_image(Texture *texture, Image *image);
+-void destroy_texture(Texture *texture);
+-void destroy_image(Image *image);
+-void clone_image(Image *image1, Image *image2);
+-void clear_image(Image *image);
+-void pad_image_borders(Image *image);
+-void check_1bit_alpha(Image *image);
+-void convert_image_from_srgb_to_rgb(Image *source_image, Image *dest_image);
+-void convert_image_from_rgb_to_srgb(Image *source_image, Image *dest_image);
+-void copy_image_to_uncompressed_texture(Image *image, int texture_type, Texture *texture);
+-void flip_image_vertical(Image *image);
+-void print_image_info(Image *image);
+-void calculate_image_dynamic_range(Image *image, float *range_min_out, float *range_max_out);
+-void convert_image_from_half_float(Image *image, float range_min, float range_max, float gamma);
+-void convert_image_to_half_float(Image *image);
+-void extend_half_float_image_to_rgb(Image *image);
+-void remove_alpha_from_image(Image *image);
+-void add_alpha_to_image(Image *image);
+-void convert_image_from_16_bit_format(Image *image);
+-void convert_image_to_16_bit_format(Image *image, int nu_components, int signed_format);
+-void convert_image_from_8_bit_format(Image *image);
+-void convert_image_to_8_bit_format(Image *image, int nu_components, int signed_format);
++TEXGENPACK_API void convert_texture_to_image(Texture *texture, Image *image);
++TEXGENPACK_API void destroy_texture(Texture *texture);
++TEXGENPACK_API void destroy_image(Image *image);
++TEXGENPACK_API void clone_image(Image *image1, Image *image2);
++TEXGENPACK_API void clear_image(Image *image);
++TEXGENPACK_API void pad_image_borders(Image *image);
++TEXGENPACK_API void check_1bit_alpha(Image *image);
++TEXGENPACK_API void convert_image_from_srgb_to_rgb(Image *source_image, Image *dest_image);
++TEXGENPACK_API void convert_image_from_rgb_to_srgb(Image *source_image, Image *dest_image);
++TEXGENPACK_API void copy_image_to_uncompressed_texture(Image *image, int texture_type, Texture *texture);
++TEXGENPACK_API void flip_image_vertical(Image *image);
++TEXGENPACK_API void print_image_info(Image *image);
++TEXGENPACK_API void calculate_image_dynamic_range(Image *image, float *range_min_out, float *range_max_out);
++TEXGENPACK_API void convert_image_from_half_float(Image *image, float range_min, float range_max, float gamma);
++TEXGENPACK_API void convert_image_to_half_float(Image *image);
++TEXGENPACK_API void extend_half_float_image_to_rgb(Image *image);
++TEXGENPACK_API void remove_alpha_from_image(Image *image);
++TEXGENPACK_API void add_alpha_to_image(Image *image);
++TEXGENPACK_API void convert_image_from_16_bit_format(Image *image);
++TEXGENPACK_API void convert_image_to_16_bit_format(Image *image, int nu_components, int signed_format);
++TEXGENPACK_API void convert_image_from_8_bit_format(Image *image);
++TEXGENPACK_API void convert_image_to_8_bit_format(Image *image, int nu_components, int signed_format);
++#ifdef __cplusplus
++}
++#endif
+ 
+ // Defined in compress.c
+ 
+-void compress_image(Image *image, int texture_type, CompressCallbackFunction func, Texture *texture,
++#ifdef __cplusplus
++extern "C"
++{
++#endif
++TEXGENPACK_API void compress_image(Image *image, int texture_type, CompressCallbackFunction func, Texture *texture,
+ int genetic_parameters, float mutation_prob, float crossover_prob);
++#ifdef __cplusplus
++}
++#endif
+ 
+ // Defined in mipmap.c
+ 
+-void generate_mipmap_level_from_original(Image *source_image, int level, Image *dest_image);
+-void generate_mipmap_level_from_previous_level(Image *source_image, Image *dest_image);
+-int count_mipmap_levels(Image *image);
+-
++#ifdef __cplusplus
++extern "C"
++{
++#endif
++TEXGENPACK_API void generate_mipmap_level_from_original(Image *source_image, int level, Image *dest_image);
++TEXGENPACK_API void generate_mipmap_level_from_previous_level(Image *source_image, Image *dest_image);
++TEXGENPACK_API int count_mipmap_levels(Image *image);
++#ifdef __cplusplus
++}
++#endif
+ // Defined in file.c
+ 
+ void load_pkm_file(const char *filename, Texture *texture);
+@@ -286,58 +318,85 @@ void save_dds_file(Texture *texture, int nu_mipmaps, const char *filename);
+ void load_astc_file(const char *filename, Texture *texture);
+ void save_astc_file(Texture *texture, const char *filename);
+ void load_ppm_file(const char *filename, Image *image);
+-void load_png_file(const char *filename, Image *image);
+-void save_png_file(Image *image, const char *filename);
++//void load_png_file(const char *filename, Image *image);
++//void save_png_file(Image *image, const char *filename);
+ 
+ // Defined in texture.c
+ 
+-TextureInfo *match_texture_type(int type);
+-TextureInfo *match_texture_description(const char *s);
+-TextureInfo *match_ktx_id(int gl_internal_format, int gl_format, int gl_type);
+-TextureInfo *match_dds_id(const char *four_cc, int dx10_format, uint32_t pixel_format_flags, int bitcount,
++#ifdef __cplusplus
++extern "C"
++{
++#endif
++TEXGENPACK_API TextureInfo *match_texture_type(int type);
++TEXGENPACK_API TextureInfo *match_texture_description(const char *s);
++TEXGENPACK_API TextureInfo *match_ktx_id(int gl_internal_format, int gl_format, int gl_type);
++TEXGENPACK_API TextureInfo *match_dds_id(const char *four_cc, int dx10_format, uint32_t pixel_format_flags, int bitcount,
+ uint32_t red_mask, uint32_t green_mask, uint32_t blue_mask, uint32_t alpha_mask);
+-const char *texture_type_text(int texture_type);
+-int get_number_of_texture_formats();
+-const char *get_texture_format_index_text(int i, int j);
+-void set_texture_decoding_function(Texture *texture, Image *image);
++TEXGENPACK_API const char *texture_type_text(int texture_type);
++TEXGENPACK_API int get_number_of_texture_formats();
++TEXGENPACK_API const char *get_texture_format_index_text(int i, int j);
++TEXGENPACK_API void set_texture_decoding_function(Texture *texture, Image *image);
++#ifdef __cplusplus
++}
++#endif
+ 
+ // Defined in compare.c
+ 
+-extern float *half_float_table;
+-extern float *gamma_corrected_half_float_table;
+-extern float *normalized_float_table;
+-
+-double compare_block_any_size_rgba(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_rgb(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_perceptive_4x4_rgb(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_rgba(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_perceptive_4x4_rgba(unsigned int *image_buffer, BlockUserData *user_data);
+-void calculate_normalized_float_table();
+-double compare_block_4x4_rgb8_with_half_float(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_rgba8_with_half_float(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_8_bit_components(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_signed_8_bit_components(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_8_bit_components_with_16_bit(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_signed_8_bit_components_with_16_bit(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_r16(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_rg16(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_r16_signed(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_rg16_signed(unsigned int *image_buffer, BlockUserData *user_data);
+-void calculate_half_float_table();
+-double compare_block_4x4_rgb_half_float(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_rgba_half_float(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_r_half_float(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_rg_half_float(unsigned int *image_buffer, BlockUserData *user_data);
+-void calculate_gamma_corrected_half_float_table();
+-double compare_block_4x4_rgb_half_float_hdr(unsigned int *image_buffer, BlockUserData *user_data);
+-double compare_block_4x4_rgba_half_float_hdr(unsigned int *image_buffer, BlockUserData *user_data);
++#ifdef __cplusplus
++extern "C"
++{
++#endif
++TEXGENPACK_API extern float *half_float_table;
++TEXGENPACK_API extern float *gamma_corrected_half_float_table;
++TEXGENPACK_API extern float *normalized_float_table;
++
++TEXGENPACK_API double compare_block_any_size_rgba(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_rgb(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_perceptive_4x4_rgb(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_rgba(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_perceptive_4x4_rgba(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API void calculate_normalized_float_table();
++TEXGENPACK_API double compare_block_4x4_rgb8_with_half_float(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_rgba8_with_half_float(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_8_bit_components(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_signed_8_bit_components(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_8_bit_components_with_16_bit(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_signed_8_bit_components_with_16_bit(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_r16(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_rg16(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_r16_signed(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_rg16_signed(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API void calculate_half_float_table();
++TEXGENPACK_API double compare_block_4x4_rgb_half_float(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_rgba_half_float(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_r_half_float(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_rg_half_float(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API void calculate_gamma_corrected_half_float_table();
++TEXGENPACK_API double compare_block_4x4_rgb_half_float_hdr(unsigned int *image_buffer, BlockUserData *user_data);
++TEXGENPACK_API double compare_block_4x4_rgba_half_float_hdr(unsigned int *image_buffer, BlockUserData *user_data);
++#ifdef __cplusplus
++}
++#endif
+ 
+ // Defined in half_float.c
+ 
+-int halfp2singles(void *target, void *source, int numel);
+-int singles2halfp(void *target, void *source, int numel);
++#ifdef __cplusplus
++extern "C"
++{
++#endif
++TEXGENPACK_API int halfp2singles(void *target, void *source, int numel);
++TEXGENPACK_API int singles2halfp(void *target, void *source, int numel);
++#ifdef __cplusplus
++}
++#endif
+ 
+ // Defined in calibrate.c
+-
+-void calibrate_genetic_parameters(Image *image, int texture_type);
+-
++															 
++#ifdef __cplusplus
++extern "C"
++{
++#endif
++TEXGENPACK_API void calibrate_genetic_parameters(Image *image, int texture_type);
++#ifdef __cplusplus
++}
++#endif

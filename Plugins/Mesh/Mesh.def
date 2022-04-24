@@ -1,0 +1,3 @@
+LIBRARY Mesh
+EXPORTS
+	GetUABEPluginDesc1

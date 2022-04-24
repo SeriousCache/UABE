@@ -1,0 +1,73 @@
+﻿{
+  "configurations": [
+    {
+      "name": "x64-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "PVRTexTool_ROOT",
+          "value": "X:/Path/To/PowerVR/PVRTexTool",
+          "type": "PATH"
+        },
+        {
+          "name": "FMOD_ROOT",
+          "value": "X:/Path/To/FMOD",
+          "type": "PATH"
+        }
+      ]
+    },
+    {
+      "name": "x64-Release",
+      "generator": "Ninja",
+      "configurationType": "Release",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": [
+        {
+          "name": "PVRTexTool_ROOT",
+          "value": "X:/Path/To/PowerVR/PVRTexTool",
+          "type": "PATH"
+        },
+        {
+          "name": "FMOD_ROOT",
+          "value": "X:/Path/To/FMOD",
+          "type": "PATH"
+        }
+      ]
+    },
+    {
+      "name": "x86-Release",
+      "generator": "Ninja",
+      "configurationType": "Release",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x86" ],
+      "variables": [
+        {
+          "name": "PVRTexTool_ROOT",
+          "value": "X:/Path/To/PowerVR/PVRTexTool",
+          "type": "PATH"
+        },
+        {
+          "name": "FMOD_ROOT",
+          "value": "X:/Path/To/FMOD",
+          "type": "PATH"
+        }
+      ]
+    }
+  ]
+}

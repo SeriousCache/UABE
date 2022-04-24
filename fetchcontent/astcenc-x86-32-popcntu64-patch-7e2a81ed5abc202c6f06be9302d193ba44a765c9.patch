@@ -1,0 +1,12 @@
+diff --git a/Source/cmake_core.cmake b/Source/cmake_core.cmake
+index 2ba1886..e6a35c3 100644
+--- a/Source/cmake_core.cmake
++++ b/Source/cmake_core.cmake
+@@ -214,7 +214,6 @@ macro(astcenc_set_properties NAME)
+                     ASTCENC_NEON=0
+                     ASTCENC_SSE=41
+                     ASTCENC_AVX=0
+-                    ASTCENC_POPCNT=1
+                     ASTCENC_F16C=0)
+         endif()
+ 

@@ -1,0 +1,531 @@
+diff --git a/code/ColladaExporter.cpp b/code/ColladaExporter.cpp
+index 4a10d5845..11e9b2ff2 100644
+--- a/code/ColladaExporter.cpp
++++ b/code/ColladaExporter.cpp
+@@ -108,6 +108,8 @@ ColladaExporter::ColladaExporter( const aiScene* pScene, IOSystem* pIOSystem, co
+     // set up strings
+     endstr = "\n";
+ 
++	mFoundSkeletonRootNodeID = "skeleton_root";
++
+     // start writing the file
+     WriteFile();
+ }
+@@ -803,15 +805,76 @@ void ColladaExporter::WriteControllerLibrary()
+     PushTag();
+     
+     for( size_t a = 0; a < mScene->mNumMeshes; ++a)
+-        WriteController( a);
++	{
++        WriteMorphController( a);
++        WriteSkinController( a);
++	}
+ 
+     PopTag();
+     mOutput << startstr << "</library_controllers>" << endstr;
+ }
+ 
++// ------------------------------------------------------------------------------------------------
++// Writes a morph controller of the given mesh
++//MOD by DerPopo
++void ColladaExporter::WriteMorphController( size_t pIndex)
++{
++    const aiMesh* mesh = mScene->mMeshes[pIndex];
++    const std::string idstr = GetMeshId( pIndex);
++    const std::string idstrEscaped = XMLEscape(idstr);
++
++    if ( mesh->mNumFaces == 0 || mesh->mNumVertices == 0 )
++        return;
++
++	if ( mesh->mNumAnimMeshes == 0 )
++        return;
++
++	const char *methodStr = "NORMALIZED";
++	if (mesh->mMethod == aiMorphingMethod_MORPH_RELATIVE)
++		methodStr = "RELATIVE";
++	
++    mOutput << startstr << "<controller id=\"" << idstrEscaped << "\" ";
++    mOutput << "name=\"morph" << pIndex << "\">"<< endstr;
++    PushTag();
++
++    mOutput << startstr << "<morph method=\"" << methodStr << "\" source=\"#" << idstrEscaped << "-base\">" << endstr;
++    PushTag();
++	
++	std::string *morphTargets = new std::string[mesh->mNumAnimMeshes];
++	for (unsigned int i = 0; i < mesh->mNumAnimMeshes; ++i)
++	{
++		const std::string idstrAnim = GetAnimMeshId(pIndex, i);
++		morphTargets[i] = XMLEscape(idstrAnim);
++	}
++	WriteIDREFArray( idstr + "-morph_targets", IDREFType_MorphTarget, morphTargets, mesh->mNumAnimMeshes );
++	delete[] morphTargets;
++
++	float *morphWeights = new float[mesh->mNumAnimMeshes];
++	for (unsigned int i = 0; i < mesh->mNumAnimMeshes; ++i)
++	{
++		morphWeights[i] = mesh->mAnimMeshes[i]->mWeight;
++	}
++	WriteFloatArray( idstr + "-morph_weights", FloatType_Weight, (ai_real*)morphWeights, mesh->mNumAnimMeshes );
++	delete[] morphWeights;
++	
++    mOutput << startstr << "<targets>" << endstr;
++    PushTag();
++	mOutput << startstr << "<input semantic=\"MORPH_TARGET\" source=\"#" << (idstrEscaped + "-morph_targets") << "\"/>" << endstr;
++	mOutput << startstr << "<input semantic=\"MORPH_WEIGHT\" source=\"#" << (idstrEscaped + "-morph_weights") << "\"/>" << endstr;
++	PopTag();
++    mOutput << startstr << "</targets>" << endstr;
++
++
++    PopTag();
++    mOutput << startstr << "</morph>" << endstr;
++    
++    PopTag();
++    mOutput << startstr << "</controller>" << endstr;
++}
++
+ // ------------------------------------------------------------------------------------------------
+ // Writes a skin controller of the given mesh
+-void ColladaExporter::WriteController( size_t pIndex)
++void ColladaExporter::WriteSkinController( size_t pIndex)
+ {
+     const aiMesh* mesh = mScene->mMeshes[pIndex];
+     const std::string idstr = GetMeshId( pIndex);
+@@ -987,12 +1050,21 @@ void ColladaExporter::WriteGeometry( size_t pIndex)
+     const aiMesh* mesh = mScene->mMeshes[pIndex];
+     const std::string idstr = GetMeshId( pIndex);
+     const std::string idstrEscaped = XMLEscape(idstr);
++	//MOD by DerPopo
++	const std::string namestr = (mesh->mName.length > 0) ? mesh->mName.C_Str() : idstr;
++	//MOD by DerPopo
++    const std::string namestrEscaped = XMLEscape(namestr);
+ 
+     if ( mesh->mNumFaces == 0 || mesh->mNumVertices == 0 )
+         return;
+ 
+     // opening tag
+-    mOutput << startstr << "<geometry id=\"" << idstrEscaped << "\" name=\"" << idstrEscaped << "_name\" >" << endstr;
++    //mOutput << startstr << "<geometry id=\"" << idstrEscaped << "\" name=\"" << idstrEscaped << "_name\" >" << endstr;
++	//MOD by DerPopo
++	if ( mesh->mNumAnimMeshes == 0)
++		mOutput << startstr << "<geometry id=\"" << idstrEscaped << "\" name=\"" << namestrEscaped << "_name\" >" << endstr;
++	else
++		mOutput << startstr << "<geometry id=\"" << idstrEscaped << "-base\" name=\"" << namestrEscaped << "_name\" >" << endstr;
+     PushTag();
+ 
+     mOutput << startstr << "<mesh>" << endstr;
+@@ -1003,6 +1075,13 @@ void ColladaExporter::WriteGeometry( size_t pIndex)
+     // Normals, if any
+     if( mesh->HasNormals() )
+         WriteFloatArray( idstr + "-normals", FloatType_Vector, (ai_real*) mesh->mNormals, mesh->mNumVertices);
++	// (Bi-)Tangents, if any
++	//MOD by DerPopo
++	if( mesh->HasTangentsAndBitangents() )
++	{
++		WriteFloatArray( idstr + "-tangents", FloatType_Vector, (ai_real*) mesh->mTangents, mesh->mNumVertices);
++		WriteFloatArray( idstr + "-bitangents", FloatType_Vector, (ai_real*) mesh->mBitangents, mesh->mNumVertices);
++	}
+ 
+     // texture coords
+     for( size_t a = 0; a < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++a)
+@@ -1015,7 +1094,7 @@ void ColladaExporter::WriteGeometry( size_t pIndex)
+     }
+ 
+     // vertex colors
+-    for( size_t a = 0; a < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++a)
++    for( size_t a = 0; a < AI_MAX_NUMBER_OF_COLOR_SETS; ++a)
+     {
+         if( mesh->HasVertexColors(static_cast<unsigned int>(a)) )
+             WriteFloatArray( idstr + "-color" + to_string(a), FloatType_Color, (ai_real*) mesh->mColors[a], mesh->mNumVertices);
+@@ -1045,7 +1124,13 @@ void ColladaExporter::WriteGeometry( size_t pIndex)
+         PushTag();
+         mOutput << startstr << "<input offset=\"0\" semantic=\"VERTEX\" source=\"#" << idstrEscaped << "-vertices\" />" << endstr;
+         if( mesh->HasNormals() )
+-            mOutput << startstr << "<input semantic=\"NORMAL\" source=\"#" << idstrEscaped << "-normals\" />" << endstr;
++            mOutput << startstr << "<input offset=\"0\" semantic=\"NORMAL\" source=\"#" << idstrEscaped << "-normals\" />" << endstr;
++		//MOD by DerPopo
++		if( mesh->HasTangentsAndBitangents() )
++		{
++            mOutput << startstr << "<input offset=\"0\" semantic=\"TANGENT\" source=\"#" << idstrEscaped << "-tangents\" />" << endstr;
++            mOutput << startstr << "<input offset=\"0\" semantic=\"BINORMAL\" source=\"#" << idstrEscaped << "-bitangents\" />" << endstr;
++		}
+         for( size_t a = 0; a < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++a )
+         {
+             if( mesh->HasTextureCoords(static_cast<unsigned int>(a)) )
+@@ -1080,6 +1165,12 @@ void ColladaExporter::WriteGeometry( size_t pIndex)
+         mOutput << startstr << "<input offset=\"0\" semantic=\"VERTEX\" source=\"#" << idstrEscaped << "-vertices\" />" << endstr;
+         if( mesh->HasNormals() )
+             mOutput << startstr << "<input offset=\"0\" semantic=\"NORMAL\" source=\"#" << idstrEscaped << "-normals\" />" << endstr;
++		//MOD by DerPopo
++		if( mesh->HasTangentsAndBitangents() )
++		{
++            mOutput << startstr << "<input offset=\"0\" semantic=\"TANGENT\" source=\"#" << idstrEscaped << "-tangents\" />" << endstr;
++            mOutput << startstr << "<input offset=\"0\" semantic=\"BINORMAL\" source=\"#" << idstrEscaped << "-bitangents\" />" << endstr;
++		}
+         for( size_t a = 0; a < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++a )
+         {
+             if( mesh->HasTextureCoords(static_cast<unsigned int>(a)) )
+@@ -1112,6 +1203,190 @@ void ColladaExporter::WriteGeometry( size_t pIndex)
+         mOutput << startstr << "</polylist>" << endstr;
+     }
+ 
++    // closing tags
++    PopTag();
++    mOutput << startstr << "</mesh>" << endstr;
++    PopTag();
++    mOutput << startstr << "</geometry>" << endstr;
++
++	for (unsigned int i = 0; i < mesh->mNumAnimMeshes; i++)
++	{
++		WriteMorphGeometry(pIndex, i);
++	}
++}
++
++// ------------------------------------------------------------------------------------------------
++// Writes the given anim mesh
++//MOD by DerPopo
++void ColladaExporter::WriteMorphGeometry( size_t pIndexMesh, size_t pIndexAnimMesh)
++{
++    const aiMesh* mesh = mScene->mMeshes[pIndexMesh];
++	const aiAnimMesh* animMesh = mesh->mAnimMeshes[pIndexAnimMesh];
++
++	const std::string idstr = GetAnimMeshId( pIndexMesh, pIndexAnimMesh);
++    const std::string idstrEscaped = XMLEscape(idstr);
++	//const std::string baseidstr = GetMeshId( pIndexMesh);
++    //const std::string baseidstrEscaped = XMLEscape(baseidstr);
++	const std::string namestr = 
++		(animMesh->mName.length > 0)
++		? animMesh->mName.C_Str()
++		: ((mesh->mName.length > 0) 
++		   ? (std::string(mesh->mName.C_Str()) + "-morph" + to_string(pIndexAnimMesh)) 
++		   : idstr);
++    const std::string namestrEscaped = XMLEscape(namestr);
++
++	if (animMesh->mNumVertices != mesh->mNumVertices) return;
++
++    // opening tag
++	mOutput << startstr << "<geometry id=\"" << idstrEscaped << "\" name=\"" << namestrEscaped << "_name\" >" << endstr;
++    PushTag();
++
++    mOutput << startstr << "<mesh>" << endstr;
++    PushTag();
++
++    // Positions, if any
++	//TODO : Check if not having vertex positions in a morph mesh works fine with all importers. The standard does allow it.
++	if ( animMesh->HasPositions() )
++		WriteFloatArray( idstr + "-positions", FloatType_Vector, (ai_real*) animMesh->mVertices, animMesh->mNumVertices);
++    // Normals, if any
++    if( animMesh->HasNormals() )
++        WriteFloatArray( idstr + "-normals", FloatType_Vector, (ai_real*) animMesh->mNormals, animMesh->mNumVertices);
++	// (Bi-)Tangents, if any
++	if( animMesh->HasTangentsAndBitangents() )
++	{
++		WriteFloatArray( idstr + "-tangents", FloatType_Vector, (ai_real*) animMesh->mTangents, animMesh->mNumVertices);
++		WriteFloatArray( idstr + "-bitangents", FloatType_Vector, (ai_real*) animMesh->mBitangents, animMesh->mNumVertices);
++	}
++
++    // texture coords
++    for( size_t a = 0; a < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++a)
++    {
++        if( mesh->HasTextureCoords(static_cast<unsigned int>(a)) && animMesh->HasTextureCoords(static_cast<unsigned int>(a)) )
++        {
++            WriteFloatArray( idstr + "-tex" + to_string(a), mesh->mNumUVComponents[a] == 3 ? FloatType_TexCoord3 : FloatType_TexCoord2,
++                (ai_real*) animMesh->mTextureCoords[a], animMesh->mNumVertices);
++        }
++    }
++
++    // vertex colors
++    for( size_t a = 0; a < AI_MAX_NUMBER_OF_COLOR_SETS; ++a)
++    {
++        if( mesh->HasVertexColors(static_cast<unsigned int>(a)) && animMesh->HasVertexColors(static_cast<unsigned int>(a)) )
++            WriteFloatArray( idstr + "-color" + to_string(a), FloatType_Color, (ai_real*) animMesh->mColors[a], animMesh->mNumVertices);
++    }
++	
++    // assemble vertex structure
++
++	//TODO : Check if skipping the vertices tag is allowed!
++	if ( animMesh->HasPositions() )
++	{
++		// Only write input for POSITION since we will write other as shared inputs in polygon definition
++		mOutput << startstr << "<vertices id=\"" << idstrEscaped << "-vertices" << "\">" << endstr;
++		PushTag();
++		mOutput << startstr << "<input semantic=\"POSITION\" source=\"#" << idstrEscaped << "-positions\" />" << endstr;
++		PopTag();
++		mOutput << startstr << "</vertices>" << endstr;
++	}
++
++    // count the number of lines, triangles and polygon meshes
++    int countLines = 0;
++    int countPoly = 0;
++    for( size_t a = 0; a < mesh->mNumFaces; ++a )
++    {
++        if (mesh->mFaces[a].mNumIndices == 2) countLines++;
++        else if (mesh->mFaces[a].mNumIndices >= 3) countPoly++;
++    }
++
++    // lines
++    if (countLines)
++    {
++        mOutput << startstr << "<lines count=\"" << countLines << "\" material=\"defaultMaterial\">" << endstr;
++        PushTag();
++		//TODO : Check if skipping the vertex input is allowed!
++		if( animMesh->HasPositions() )
++			mOutput << startstr << "<input offset=\"0\" semantic=\"VERTEX\" source=\"#" << idstrEscaped << "-vertices\" />" << endstr;
++        if( animMesh->HasNormals() )
++            mOutput << startstr << "<input offset=\"0\" semantic=\"NORMAL\" source=\"#" << idstrEscaped << "-normals\" />" << endstr;
++		if( animMesh->HasTangentsAndBitangents() )
++		{
++            mOutput << startstr << "<input offset=\"0\" semantic=\"TANGENT\" source=\"#" << idstrEscaped << "-tangents\" />" << endstr;
++            mOutput << startstr << "<input offset=\"0\" semantic=\"BINORMAL\" source=\"#" << idstrEscaped << "-bitangents\" />" << endstr;
++		}
++        for( size_t a = 0; a < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++a )
++        {
++			if( mesh->HasTextureCoords(static_cast<unsigned int>(a)) && animMesh->HasTextureCoords(static_cast<unsigned int>(a)) )
++                mOutput << startstr << "<input offset=\"0\" semantic=\"TEXCOORD\" source=\"#" << idstrEscaped << "-tex" << a << "\" " << "set=\"" << a << "\""  << " />" << endstr;
++        }
++        for( size_t a = 0; a < AI_MAX_NUMBER_OF_COLOR_SETS; ++a )
++        {
++			if( mesh->HasVertexColors(static_cast<unsigned int>(a)) && animMesh->HasVertexColors(static_cast<unsigned int>(a)) )
++                mOutput << startstr << "<input offset=\"0\" semantic=\"COLOR\" source=\"#" << idstrEscaped << "-color" << a << "\" " << "set=\"" << a << "\""  << " />" << endstr;
++        }
++
++		//TODO : Check if the faces are a requirement!
++        /*mOutput << startstr << "<p>";
++        for( size_t a = 0; a < mesh->mNumFaces; ++a )
++        {
++            const aiFace& face = mesh->mFaces[a];
++            if (face.mNumIndices != 2) continue;
++            for( size_t b = 0; b < face.mNumIndices; ++b )
++                mOutput << face.mIndices[b] << " ";
++        }
++        mOutput << "</p>" << endstr;*/
++        PopTag();
++        mOutput << startstr << "</lines>" << endstr;
++    }
++
++    // triangle - don't use it, because compatibility problems
++
++    // polygons
++    if (countPoly)
++    {
++        mOutput << startstr << "<polylist count=\"" << countPoly << "\" material=\"defaultMaterial\">" << endstr;
++        PushTag();
++		//TODO : Check if skipping the vertex input is allowed!
++		if( animMesh->HasPositions() )
++			mOutput << startstr << "<input offset=\"0\" semantic=\"VERTEX\" source=\"#" << idstrEscaped << "-vertices\" />" << endstr;
++        if( animMesh->HasNormals() )
++            mOutput << startstr << "<input offset=\"0\" semantic=\"NORMAL\" source=\"#" << idstrEscaped << "-normals\" />" << endstr;
++		if( animMesh->HasTangentsAndBitangents() )
++		{
++            mOutput << startstr << "<input offset=\"0\" semantic=\"TANGENT\" source=\"#" << idstrEscaped << "-tangents\" />" << endstr;
++            mOutput << startstr << "<input offset=\"0\" semantic=\"BINORMAL\" source=\"#" << idstrEscaped << "-bitangents\" />" << endstr;
++		}
++        for( size_t a = 0; a < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++a )
++        {
++			if( mesh->HasTextureCoords(static_cast<unsigned int>(a)) && animMesh->HasTextureCoords(static_cast<unsigned int>(a)) )
++                mOutput << startstr << "<input offset=\"0\" semantic=\"TEXCOORD\" source=\"#" << idstrEscaped << "-tex" << a << "\" " << "set=\"" << a << "\""  << " />" << endstr;
++        }
++        for( size_t a = 0; a < AI_MAX_NUMBER_OF_COLOR_SETS; ++a )
++        {
++			if( mesh->HasVertexColors(static_cast<unsigned int>(a)) && animMesh->HasVertexColors(static_cast<unsigned int>(a)) )
++                mOutput << startstr << "<input offset=\"0\" semantic=\"COLOR\" source=\"#" << idstrEscaped << "-color" << a << "\" " << "set=\"" << a << "\""  << " />" << endstr;
++        }
++
++		//TODO : Check if the faces are a requirement!
++        /*mOutput << startstr << "<vcount>";
++        for( size_t a = 0; a < mesh->mNumFaces; ++a )
++        {
++            if (mesh->mFaces[a].mNumIndices < 3) continue;
++            mOutput << mesh->mFaces[a].mNumIndices << " ";
++        }
++        mOutput << "</vcount>" << endstr;
++
++        mOutput << startstr << "<p>";
++        for( size_t a = 0; a < mesh->mNumFaces; ++a )
++        {
++            const aiFace& face = mesh->mFaces[a];
++            if (face.mNumIndices < 3) continue;
++            for( size_t b = 0; b < face.mNumIndices; ++b )
++                mOutput << face.mIndices[b] << " ";
++        }
++        mOutput << "</p>" << endstr;*/
++        PopTag();
++        mOutput << startstr << "</polylist>" << endstr;
++    }
++
+     // closing tags
+     PopTag();
+     mOutput << startstr << "</mesh>" << endstr;
+@@ -1225,6 +1500,51 @@ void ColladaExporter::WriteFloatArray( const std::string& pIdString, FloatDataTy
+     mOutput << startstr << "</source>" << endstr;
+ }
+ 
++// ------------------------------------------------------------------------------------------------
++// Writes a IDREF array
++//MOD by DerPopo
++void ColladaExporter::WriteIDREFArray( const std::string& pIdString, IDREFDataType pType, const std::string* pData, size_t pElementCount)
++{
++	// make a switch for more types
++	if (pType != IDREFType_MorphTarget)
++		return;
++
++    std::string arrayId = pIdString + "-array";
++
++    mOutput << startstr << "<source id=\"" << XMLEscape(pIdString) << "\" name=\"" << XMLEscape(pIdString) << "\">" << endstr;
++    PushTag();
++
++    // source array
++    mOutput << startstr << "<IDREF_array id=\"" << XMLEscape(arrayId) << "\" count=\"" << pElementCount << "\"> ";
++    PushTag();
++
++    for( size_t a = 0; a < pElementCount; ++a )
++        mOutput << pData[a] << " ";
++
++    mOutput << "</IDREF_array>" << endstr;
++    PopTag();
++
++    // the usual Collada fun. Let's bloat it even more!
++    mOutput << startstr << "<technique_common>" << endstr;
++    PushTag();
++    mOutput << startstr << "<accessor count=\"" << pElementCount << "\" offset=\"0\" source=\"#" << arrayId << "\" stride=\"1\">" << endstr;
++    PushTag();
++
++    switch( pType )
++    {
++        case IDREFType_MorphTarget:
++            mOutput << startstr << "<param name=\"MORPH_TARGET\" type=\"IDREF\" />" << endstr;
++            break;
++	}
++
++    PopTag();
++    mOutput << startstr << "</accessor>" << endstr;
++    PopTag();
++    mOutput << startstr << "</technique_common>" << endstr;
++    PopTag();
++    mOutput << startstr << "</source>" << endstr;
++}
++
+ // ------------------------------------------------------------------------------------------------
+ // Writes the scene library
+ void ColladaExporter::WriteSceneLibrary()
+diff --git a/code/ColladaExporter.h b/code/ColladaExporter.h
+index e7a4a9b5d..c406e08eb 100644
+--- a/code/ColladaExporter.h
++++ b/code/ColladaExporter.h
+@@ -105,8 +105,13 @@ protected:
+     /// Writes the controller library
+     void WriteControllerLibrary();
+ 
++    /// Writes a morph controller of the given mesh
++	//MOD by DerPopo
++    void WriteMorphController( size_t pIndex);
++
+     /// Writes a skin controller of the given mesh
+-    void WriteController( size_t pIndex);
++	//MOD by DerPopo (rename)
++    void WriteSkinController( size_t pIndex);
+ 
+     /// Writes the geometry library
+     void WriteGeometryLibrary();
+@@ -114,12 +119,22 @@ protected:
+     /// Writes the given mesh
+     void WriteGeometry( size_t pIndex);
+ 
++    /// Writes the given anim mesh
++	//MOD by DerPopo
++    void WriteMorphGeometry( size_t pIndexMesh, size_t pIndexAnimMesh);
++
+     //enum FloatDataType { FloatType_Vector, FloatType_TexCoord2, FloatType_TexCoord3, FloatType_Color, FloatType_Mat4x4, FloatType_Weight };
+     // customized to add animation related type
+ 	enum FloatDataType { FloatType_Vector, FloatType_TexCoord2, FloatType_TexCoord3, FloatType_Color, FloatType_Mat4x4, FloatType_Weight, FloatType_Time };
+ 
+     /// Writes a float array of the given type
+     void WriteFloatArray( const std::string& pIdString, FloatDataType pType, const ai_real* pData, size_t pElementCount);
++	
++	/// Types of IDREF accessors
++	enum IDREFDataType { IDREFType_MorphTarget };
++	/// Writes a IDREF array
++	//MOD by DerPopo
++	void WriteIDREFArray( const std::string& pIdString, IDREFDataType pType, const std::string* pData, size_t pElementCount);
+ 
+     /// Writes the scene library
+     void WriteSceneLibrary();
+@@ -127,7 +142,7 @@ protected:
+ 	// customized, Writes the animation library
+ 	void WriteAnimationsLibrary();
+ 	void WriteAnimationLibrary( size_t pIndex);
+-	std::string mFoundSkeletonRootNodeID = "skeleton_root";	 	// will be replaced by found node id in the WriteNode call.
++	std::string mFoundSkeletonRootNodeID;	 	// will be replaced by found node id in the WriteNode call.
+ 	
+     /// Recursively writes the given node
+     void WriteNode( const aiScene* scene, aiNode* pNode);
+@@ -145,6 +160,12 @@ protected:
+         return std::string( "meshId" ) + to_string(pIndex);
+     }
+ 
++    /// Creates a mesh ID for the given anim mesh
++	//MOD by DerPopo
++    std::string GetAnimMeshId( size_t pIndexMesh, size_t pIndexAnimMesh) const {
++        return std::string( "meshId" ) + to_string(pIndexMesh) + std::string( "-morph" ) + to_string(pIndexAnimMesh);
++    }
++
+ public:
+     /// Stringstream to write all output into
+     std::stringstream mOutput;
+diff --git a/code/CreateAnimMesh.cpp b/code/CreateAnimMesh.cpp
+index 094a414bf..ecfaf975a 100644
+--- a/code/CreateAnimMesh.cpp
++++ b/code/CreateAnimMesh.cpp
+@@ -47,6 +47,8 @@ namespace Assimp    {
+ aiAnimMesh *aiCreateAnimMesh(const aiMesh *mesh)
+ {
+     aiAnimMesh *animesh = new aiAnimMesh;
++	//MOD by DerPopo
++	animesh->mName = mesh->mName;
+     animesh->mVertices = NULL;
+     animesh->mNormals = NULL;
+     animesh->mTangents = NULL;
+diff --git a/code/MMDPmxParser.cpp b/code/MMDPmxParser.cpp
+index 970cbc31e..36fda4fe6 100644
+--- a/code/MMDPmxParser.cpp
++++ b/code/MMDPmxParser.cpp
+@@ -39,6 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ----------------------------------------------------------------------
+ */
+ #include <utility>
++#include <stdint.h>
+ #include "MMDPmxParser.h"
+ #include "../contrib/utf8cpp/source/utf8.h"
+ #include "Exceptional.h"
+diff --git a/contrib/zip/src/miniz.h b/contrib/zip/src/miniz.h
+index 916fb1ff8..f59bb693c 100644
+--- a/contrib/zip/src/miniz.h
++++ b/contrib/zip/src/miniz.h
+@@ -4426,7 +4426,10 @@ mz_bool mz_zip_writer_add_file(mz_zip_archive *pZip, const char *pArchive_name,
+   size_t archive_name_size;
+   mz_uint8 local_dir_header[MZ_ZIP_LOCAL_DIR_HEADER_SIZE];
+   MZ_FILE *pSrc_file = NULL;
+-
++  
++  if ((int)level_and_flags < 0)
++    level_and_flags = MZ_DEFAULT_LEVEL;
++  level = level_and_flags & 0xF;
+   if ((!pZip) || (!pZip->m_pState) || (pZip->m_zip_mode != MZ_ZIP_MODE_WRITING) || (!pArchive_name) || ((comment_size) && (!pComment)) || (level > MZ_UBER_COMPRESSION))
+     return MZ_FALSE;
+ 
+diff --git a/include/assimp/mesh.h b/include/assimp/mesh.h
+index c8648c778..d82dd660e 100644
+--- a/include/assimp/mesh.h
++++ b/include/assimp/mesh.h
+@@ -383,6 +383,12 @@ struct aiAnimMesh
+      */
+     float mWeight;
+ 
++	//MOD by DerPopo
++	/** Name of the anim mesh. Anim meshes can be named, but this is not a
++     *  requirement and leaving this field empty is totally fine.
++     **/
++    C_STRUCT aiString mName;
++
+ #ifdef __cplusplus
+ 
+     aiAnimMesh()

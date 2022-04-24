@@ -1,0 +1,27 @@
+#pragma once
+
+const TCHAR *LicencesText =
+TEXT("LZ4 Library\r\n")
+TEXT("Copyright (c) 2011-2020, Yann Collet\r\n")
+TEXT("All rights reserved.\r\n")
+TEXT("\r\n")
+TEXT("Redistribution and use in source and binary forms, with or without modification,\r\n")
+TEXT("are permitted provided that the following conditions are met:\r\n")
+TEXT("\r\n")
+TEXT("* Redistributions of source code must retain the above copyright notice, this\r\n")
+TEXT("  list of conditions and the following disclaimer.\r\n")
+TEXT("\r\n")
+TEXT("* Redistributions in binary form must reproduce the above copyright notice, this\r\n")
+TEXT("  list of conditions and the following disclaimer in the documentation and/or\r\n")
+TEXT("  other materials provided with the distribution.\r\n")
+TEXT("\r\n")
+TEXT("THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\r\n")
+TEXT("ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\r\n")
+TEXT("WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\r\n")
+TEXT("DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR\r\n")
+TEXT("ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\r\n")
+TEXT("(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\r\n")
+TEXT("LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\r\n")
+TEXT("ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\r\n")
+TEXT("(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\r\n")
+TEXT("SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.");

@@ -1,0 +1,3 @@
+LIBRARY Utility
+EXPORTS
+	GetUABEPluginDesc1

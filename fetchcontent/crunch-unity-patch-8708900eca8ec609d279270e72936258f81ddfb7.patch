@@ -1,0 +1,26 @@
+diff --git a/crnlib/crn_threading_pthreads.cpp b/crnlib/crn_threading_pthreads.cpp
+index 9b1b812..3bc7fc0 100644
+--- a/crnlib/crn_threading_pthreads.cpp
++++ b/crnlib/crn_threading_pthreads.cpp
+@@ -32,6 +32,8 @@ void crn_threading_init() {
+ #else
+   g_number_of_processors = 1;
+ #endif
++  // Don't use more threads than supported.
++  g_number_of_processors = math::minimum<uint>(g_number_of_processors, task_pool::cMaxThreads);
+ }
+ 
+ crn_thread_id_t crn_get_current_thread_id() {
+diff --git a/crnlib/crn_threading_win32.cpp b/crnlib/crn_threading_win32.cpp
+index d1730a3..b8e84c7 100644
+--- a/crnlib/crn_threading_win32.cpp
++++ b/crnlib/crn_threading_win32.cpp
+@@ -13,6 +13,8 @@ void crn_threading_init() {
+   GetSystemInfo(&g_system_info);
+ 
+   g_number_of_processors = math::maximum<uint>(1U, g_system_info.dwNumberOfProcessors);
++  // Don't use more threads than supported.
++  g_number_of_processors = math::minimum<uint>(g_number_of_processors, task_pool::cMaxThreads);
+ }
+ 
+ crn_thread_id_t crn_get_current_thread_id() {

@@ -1,0 +1,39 @@
+diff --git a/crnlib/crn_threading_pthreads.cpp b/crnlib/crn_threading_pthreads.cpp
+index 9ab08f8..4890a71 100644
+--- a/crnlib/crn_threading_pthreads.cpp
++++ b/crnlib/crn_threading_pthreads.cpp
+@@ -34,6 +34,8 @@ namespace crnlib
+ #else
+       g_number_of_processors = 1;
+ #endif
++	  // Don't use more threads than supported.
++      g_number_of_processors = math::minimum<uint>(g_number_of_processors, task_pool::cMaxThreads);
+    }
+ 
+    crn_thread_id_t crn_get_current_thread_id()
+diff --git a/crnlib/crn_threading_win32.cpp b/crnlib/crn_threading_win32.cpp
+index ccef52a..e9b513f 100644
+--- a/crnlib/crn_threading_win32.cpp
++++ b/crnlib/crn_threading_win32.cpp
+@@ -15,6 +15,8 @@ namespace crnlib
+       GetSystemInfo(&g_system_info);
+ 
+       g_number_of_processors = math::maximum<uint>(1U, g_system_info.dwNumberOfProcessors);
++	  // Don't use more threads than supported.
++      g_number_of_processors = math::minimum<uint>(g_number_of_processors, task_pool::cMaxThreads);
+    }
+ 
+    crn_thread_id_t crn_get_current_thread_id()
+diff --git a/crnlib/crn_timer.h b/crnlib/crn_timer.h
+index 4894a70..73536e5 100644
+--- a/crnlib/crn_timer.h
++++ b/crnlib/crn_timer.h
+@@ -49,7 +49,7 @@ namespace crnlib
+       timer m_tm;
+ 
+    public:
+-      inline timed_scope(char* pName = "timed_scope") : m_pName(pName) { m_tm.start(); }
++      inline timed_scope(const char* pName = "timed_scope") : m_pName(pName) { m_tm.start(); }
+       
+       inline double get_elapsed_secs() const { return m_tm.get_elapsed_secs(); }
+       inline double get_elapsed_ms() const { return m_tm.get_elapsed_ms(); }

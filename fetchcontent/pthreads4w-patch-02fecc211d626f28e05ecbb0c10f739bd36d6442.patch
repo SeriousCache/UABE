@@ -1,0 +1,32 @@
+diff --git a/_ptw32.h b/_ptw32.h
+index bb47ab7..6da4eca 100644
+--- a/_ptw32.h
++++ b/_ptw32.h
+@@ -162,16 +162,17 @@
+ #  include "need_errno.h"
+ #endif
+ 
+-#if defined(__MINGW64_VERSION_MAJOR) || defined(__BORLANDC__)
+-#  define int64_t LONGLONG
+-#  define uint64_t ULONGLONG
+-#elif !defined(__MINGW32__)
+-#  define int64_t _int64
+-#  define uint64_t unsigned _int64
+-#  if defined(PTW32_CONFIG_MSVC6)
+-     typedef long intptr_t;
+-#  endif
+-#endif
++//#if defined(__MINGW64_VERSION_MAJOR) || defined(__BORLANDC__)
++//#  define int64_t LONGLONG
++//#  define uint64_t ULONGLONG
++//#elif !defined(__MINGW32__)
++//#  define int64_t _int64
++//#  define uint64_t unsigned _int64
++//#  if defined(PTW32_CONFIG_MSVC6)
++//     typedef long intptr_t;
++//#  endif
++//#endif
++#include <stdint.h>
+ 
+ /*
+  * In case ETIMEDOUT hasn't been defined above somehow.

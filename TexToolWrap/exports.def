@@ -1,0 +1,5 @@
+LIBRARY TexToolWrap
+EXPORTS
+  Compress
+  GetMaxCompressedSize
+  Decompress

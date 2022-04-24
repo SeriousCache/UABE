@@ -1,0 +1,11 @@
+add_library (CrnlibWrapUnity SHARED CrnlibWrap.cpp)
+target_include_directories (CrnlibWrapUnity PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(CrnlibWrapUnity PRIVATE crnlib-unity)
+target_compile_definitions(CrnlibWrapUnity PRIVATE HAS_ETC2 WRAPSUFFIX=Unity CRNVERSION=1)
+set_target_properties(CrnlibWrapUnity PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+add_library (CrnlibWrapLegacy SHARED CrnlibWrap.cpp)
+target_include_directories (CrnlibWrapLegacy PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(CrnlibWrapLegacy PRIVATE crnlib-legacy)
+target_compile_definitions(CrnlibWrapLegacy PRIVATE WRAPSUFFIX=Legacy CRNVERSION=0)
+set_target_properties(CrnlibWrapLegacy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

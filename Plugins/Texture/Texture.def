@@ -1,0 +1,3 @@
+LIBRARY Texture
+EXPORTS
+	GetUABEPluginDesc1

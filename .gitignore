@@ -1,0 +1,10 @@
+/.vs/
+/out/
+**.aps
+**.suo
+**.vcxproj.user
+/fetchcontent/*-src/
+/fetchcontent/ispc_compiler/
+/TypeTreeGenerator/.vs
+/TypeTreeGenerator/out
+/Tools/TypeTreeGenerator.pdb

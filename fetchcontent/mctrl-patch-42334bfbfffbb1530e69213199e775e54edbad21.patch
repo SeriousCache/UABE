@@ -1,0 +1,2419 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6108f3c..0f22e05 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -15,7 +15,7 @@ endif()
+ 
+ 
+ set(CMAKE_SHARED_LIBRARY_PREFIX "")
+-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
++set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+ 
+ # set up include-directories
+diff --git a/include/mCtrl/mditab.h b/include/mCtrl/mditab.h
+index 454094a..33a1ffc 100644
+--- a/include/mCtrl/mditab.h
++++ b/include/mCtrl/mditab.h
+@@ -222,9 +222,9 @@ BOOL MCTRL_API mcMditab_DefWindowProc(HWND hwndMain, HWND hwndMditab, UINT uMsg,
+ 
+ /** @brief Show close button on right side of the control. This is default. */
+ #define MC_MTS_CBONTOOLBAR           0x0000
+-/** @brief Not supported, reserved for future use. */
++/** @brief Show close button on right side of each item. */
+ #define MC_MTS_CBONEACHTAB           0x0001
+-/** @brief Not supported, reserved for future use. */
++/** @brief Show close button on right side of the selected item. */
+ #define MC_MTS_CBONACTIVETAB         0x0002
+ /** @brief Don't show close button */
+ #define MC_MTS_CBNONE                0x0003
+@@ -297,8 +297,28 @@ BOOL MCTRL_API mcMditab_DefWindowProc(HWND hwndMain, HWND hwndMditab, UINT uMsg,
+  */
+ #define MC_MTS_ROUNDEDITEMS          0x2000
+ 
++/**
++ * @brief Align items to the right, keeping the order as is.
++ *
++ * If the items do not cover the whole area, the blank space will be left instead of right.
++ * Otherwise, there is no difference to the default left alignment.
++ */
++#define MC_MTS_RALIGNITEMS           0x4000
++/**
++ * @brief Allow mouse scrolling on the items.
++ */
++#define MC_MTS_MOUSESCROLL           0x8000
+ /*@}*/
+ 
++/**
++ * @name Custom Control Styles
++ */
++/*@{*/
++/**
++ * @brief Add an open button to the toolbar of the control.
++ */
++#define MC_MTCS_OPENBTN               0x0001
++/*@}*/
+ 
+ /**
+  * @anchor MC_MTIF_xxxx
+@@ -312,6 +332,8 @@ BOOL MCTRL_API mcMditab_DefWindowProc(HWND hwndMain, HWND hwndMditab, UINT uMsg,
+ #define MC_MTIF_IMAGE        (1 << 1)
+ /** @brief @ref MC_MTITEMW::lParam or @ref MC_MTITEMA::lParam is valid. */
+ #define MC_MTIF_PARAM        (1 << 2)
++/** @brief @ref MC_MTITEMW::bDisableClose or @ref MC_MTITEMA::bDisableClose is valid. */
++#define MC_MTIF_CLOSEFLAG    (1 << 3)
+ 
+ /*@}*/
+ 
+@@ -341,18 +363,21 @@ BOOL MCTRL_API mcMditab_DefWindowProc(HWND hwndMain, HWND hwndMditab, UINT uMsg,
+ #define MC_MTHT_ONLISTBUTTON         (1 << 6)
+ /** @brief The coordinates hit the auxiliary button for closing current item. */
+ #define MC_MTHT_ONCLOSEBUTTON        (1 << 7)
++/** @brief The coordinates hit the auxiliary button for opening an item. */
++#define MC_MTHT_ONOPENBUTTON         (1 << 8)
+ /** @brief The coordinates hit any auxiliary button. */
+ #define MC_MTHT_ONBUTTON                                                      \
+         (MC_MTHT_ONLEFTSCROLLBUTTON | MC_MTHT_ONRIGHTSCROLLBUTTON |           \
+-         MC_MTHT_ONLISTBUTTON | MC_MTHT_ONCLOSEBUTTON)
++         MC_MTHT_ONLISTBUTTON | MC_MTHT_ONCLOSEBUTTON |                       \
++		 MC_MTHT_ONOPENBUTTON)
+ /** @brief Above the client area. */
+-#define MC_MTHT_ABOVE                (1 << 8)
++#define MC_MTHT_ABOVE                (1 << 9)
+ /** @brief Below the client area. */
+-#define MC_MTHT_BELOW                (1 << 9)
++#define MC_MTHT_BELOW                (1 << 10)
+ /** @brief To right of the client area. */
+-#define MC_MTHT_TORIGHT              (1 << 10)
++#define MC_MTHT_TORIGHT              (1 << 11)
+ /** @brief To left of the client area. */
+-#define MC_MTHT_TOLEFT               (1 << 11)
++#define MC_MTHT_TOLEFT               (1 << 12)
+ 
+ /*@}*/
+ 
+@@ -379,6 +404,8 @@ typedef struct MC_MTITEMW_tag {
+     int iImage;
+     /** User data. */
+     LPARAM lParam;
++	/** Disable or hide the close button for this item. */
++	BOOL bDisableClose;
+ } MC_MTITEMW;
+ 
+ /**
+@@ -398,6 +425,8 @@ typedef struct MC_MTITEMA_tag {
+     int iImage;
+     /** User data. */
+     LPARAM lParam;
++	/** Disable or hide the close button for this item. */
++	BOOL bDisableClose;
+ } MC_MTITEMA;
+ 
+ /**
+@@ -749,6 +778,15 @@ typedef struct MC_NMMTDISPINFOA_tag {
+  */
+ #define MC_MTM_CANCELDRAGITEM     (MC_MTM_FIRST + 22)
+ 
++/**
++ * @brief Change custom style flags. @ref MC_MTCS_OPENBTN
++ *
++ * @param[in] wParam (@c int) flags. Set to 0 for standard behaviour.
++ * @param lParam Reserved, set to zero.
++ * @return None.
++ */
++#define MC_MTM_SETCUSTOMSTYLE       (MC_MTM_FIRST + 23)
++
+ /*@}*/
+ 
+ 
+@@ -843,6 +881,16 @@ typedef struct MC_NMMTDISPINFOA_tag {
+  */
+ #define MC_MTN_GETDISPINFOA       (MC_MTN_FIRST + 5)
+ 
++/**
++ * @brief Fired when user requests opening a new tab. 
++ * The receiver of the notification has to open new tabs manually (@ref MC_MTM_INSERTITEMW),
++ * the control itself does not create the tab on user request.
++ * @param[in] wParam (@c int) Id of the control sending the notification.
++ * @param[in] lParam (@c NMHDR*) Pointer to the notification header structure.
++ * @return None.
++ */
++#define MC_MTN_OPENITEM          (MC_MTN_FIRST + 6)
++
+ /*@}*/
+ 
+ 
+diff --git a/include/mCtrl/treelist.h b/include/mCtrl/treelist.h
+index b75cf5e..93cd396 100644
+--- a/include/mCtrl/treelist.h
++++ b/include/mCtrl/treelist.h
+@@ -515,6 +515,20 @@ void MCTRL_API mcTreeList_Terminate(void);
+ /*@}*/
+ 
+ 
++/**
++ * @name Flags for @ref MC_TLM_DELETEITEM
++ * @anchor MC_TLDI_xxxx
++ */
++/*@{*/
++
++/** @brief Sends @ref MC_TLN_DELETEITEM notifications for each item. */
++#define MC_TLDI_NOTIFY               0
++/** @brief Suppresses all @ref MC_TLN_DELETEITEM notifications. */
++#define MC_TLDI_NONOTIFY             (1 << 0)
++
++/*@}*/
++
++
+ /**
+  * @name Structures
+  */
+@@ -819,7 +833,6 @@ typedef struct MC_NMTLSUBDISPINFOA_tag {
+ 
+ /*@}*/
+ 
+-
+ /**
+  * @name Control Messages
+  */
+@@ -1005,7 +1018,7 @@ typedef struct MC_NMTLSUBDISPINFOA_tag {
+  * is deleted. If you specify @ref MC_TLI_ROOT as the item to delete, then all
+  * items of the control are deleted.
+  *
+- * @param wParam Reserved, set to zero.
++ * @param wParam Delete notification flag, set to @ref MC_TLDI_NOTIFY or @ref MC_TLDI_NONOTIFY.
+  * @param[in] lParam (@ref MC_HTREELISTITEM) Handle of the item or @ref MC_TLI_ROOT.
+  * @return (@c BOOL) @c TRUE on success, @c FALSE otherwise.
+  */
+@@ -1219,6 +1232,73 @@ typedef struct MC_NMTLSUBDISPINFOA_tag {
+  */
+ #define MC_TLM_GETTOOLTIPS          (MC_TLM_FIRST + 37)
+ 
++/**
++ * @brief Change custom style flags. 
++ * 
++ * Bit 0: Enable or disable multi selection of child items for multiselect style tree lists.
++ *   The default mCtrl multiselect behaviour is to only allow multi selection of sibling items.
++ *   Sending this message with wParam set to TRUE overrides this behaviour to allow multi selection of
++ *     child items along with parents, given that the parent node is expanded.
++ *
++ *   When resetting the control to the default behaviour with wParam set to FALSE,
++ *     the caller has to ensure that the current selection only consists of siblings.
++ *
++ *   Note that this setting may degrade performance with deeply nested trees
++ *     since the whole tree must be iterated through to find selected elements.
++ * 
++ * Bit 1: Always show the selection as if the tree list was focused.
++ *
++ * @param[in] wParam (@c int) flags. Set to 0 for standard behaviour.
++ * @param lParam Reserved, set to zero.
++ * @return None.
++ */
++#define MC_TLM_SETCUSTOMSTYLE       (MC_TLM_FIRST + 38)
++
++/**
++ * @brief Insert new items into the control (Unicode variant).
++ *
++ * Note application may set @c MC_TLINSERTSTRUCT::hParent to @ref MC_TLI_ROOT
++ * to insert the new item as the root item, and similarly the member
++ * @c MC_TLINSERTSTRUCT::hInsertAfter may be set to @c MC_TLI_FIRST or
++ * @ref MC_TLI_LAST to insert the item as first or last child item of the
++ * parent.
++ *
++ * @param wParam (@c int) Amount of items to insert. Set to values above 0.
++ * @param[in] lParam (@ref MC_TLINSERTSTRUCTW*) Pointer to the structure array
++ * specifying new item position in the tree and other attributes of each item.
++ * The @c MC_TLINSERTSTRUCTW::hParent fields will be set to the respective new item handles.
++ * @return (@ref MC_HTREELISTITEM) Handle of the last new item, or @c NULL on failure.
++ */
++#define MC_TLM_INSERTITEMSW           (MC_TLM_FIRST + 39)
++
++/**
++ * @brief Insert new items into the control (ANSI variant).
++ *
++ * Note application may set @c MC_TLINSERTSTRUCT::hParent to @ref MC_TLI_ROOT
++ * to insert the new item as the root item, and similarly the member
++ * @c MC_TLINSERTSTRUCT::hInsertAfter may be set to @c MC_TLI_FIRST or
++ * @ref MC_TLI_LAST to insert the item as first or last child item of the
++ * parent.
++ *
++ * @param wParam (@c int) Amount of items to insert. Set to values above 0.
++ * @param[in,out] lParam (@ref MC_TLINSERTSTRUCTA*) Pointer to the structure array
++ * specifying new item position in the tree and other attributes of each item.
++ * The @c MC_TLINSERTSTRUCTA::hParent fields will be set to the respective new item handles.
++ * @return (@ref MC_HTREELISTITEM) Handle of the last new item, or @c NULL on failure.
++ */
++#define MC_TLM_INSERTITEMSA           (MC_TLM_FIRST + 40)
++
++/**
++ * @brief Move an item under its parent.
++ *
++ * @param wParam (@ref MC_HTREELISTITEM) Handle of the item to move.
++ * @param lParam (@ref MC_HTREELISTITEM) Handle of the item after which
++ * the other item should be placed. Both items must have the same parent.
++ * Can be @ref MC_TLI_FIRST and @ref MC_TLI_LAST.
++ * @return None.
++ */
++#define MC_TLM_MOVEITEM               (MC_TLM_FIRST + 41)
++
+ /*@}*/
+ 
+ 
+@@ -1454,6 +1534,8 @@ typedef struct MC_NMTLSUBDISPINFOA_tag {
+ #define MC_TLM_GETCOLUMN         MCTRL_NAME_AW(MC_TLM_GETCOLUMN)
+ /** Unicode-resolution alias. @sa MC_TLM_INSERTITEMW MC_TLM_INSERTITEMA */
+ #define MC_TLM_INSERTITEM        MCTRL_NAME_AW(MC_TLM_INSERTITEM)
++/** Unicode-resolution alias. @sa MC_TLM_INSERTITEMSW MC_TLM_INSERTITEMSA */
++#define MC_TLM_INSERTITEMS       MCTRL_NAME_AW(MC_TLM_INSERTITEMS)
+ /** Unicode-resolution alias. @sa MC_TLM_SETITEMW MC_TLM_SETITEMA */
+ #define MC_TLM_SETITEM           MCTRL_NAME_AW(MC_TLM_SETITEM)
+ /** Unicode-resolution alias. @sa MC_TLM_GETITEMW MC_TLM_GETITEMA */
+diff --git a/include/mctrl.h b/include/mctrl.h
+index 3745875..24a0fb8 100644
+--- a/include/mctrl.h
++++ b/include/mctrl.h
+@@ -21,14 +21,14 @@
+ 
+ #include <mCtrl/_defs.h>
+ #include <mCtrl/_common.h>
+-#include <mCtrl/button.h>
+-#include <mCtrl/chart.h>
++//#include <mCtrl/button.h>
++//#include <mCtrl/chart.h>
+ #include <mCtrl/dialog.h>
+-#include <mCtrl/expand.h>
+-#include <mCtrl/grid.h>
+-#include <mCtrl/html.h>
+-#include <mCtrl/imgview.h>
+-#include <mCtrl/menubar.h>
++//#include <mCtrl/expand.h>
++//#include <mCtrl/grid.h>
++//#include <mCtrl/html.h>
++//#include <mCtrl/imgview.h>
++//#include <mCtrl/menubar.h>
+ #include <mCtrl/mditab.h>
+ #include <mCtrl/table.h>
+ #include <mCtrl/version.h>
+diff --git a/lib/hsluv-c/src/hsluv.c b/lib/hsluv-c/src/hsluv.c
+index 7c09b38..268d80e 100644
+--- a/lib/hsluv-c/src/hsluv.c
++++ b/lib/hsluv-c/src/hsluv.c
+@@ -30,7 +30,7 @@
+ 
+ #include <float.h>
+ #include <math.h>
+-
++#include <limits.h>
+ 
+ typedef struct Triplet_tag Triplet;
+ struct Triplet_tag {
+@@ -210,7 +210,9 @@ y2l(double y)
+     if(y <= epsilon)
+         return y * kappa;
+     else
+-        return 116.0 * cbrt(y) - 16.0;
++	{
++		return 116.0 * cbrt(y) - 16.0;
++	}
+ }
+ 
+ static double
+@@ -246,6 +248,7 @@ xyz2luv(Triplet* in_out)
+ static void
+ luv2xyz(Triplet* in_out)
+ {
++	double var_u, var_v, y, x, z;
+     if(in_out->a <= 0.00000001) {
+         /* Black will create a divide-by-zero error. */
+         in_out->a = 0.0;
+@@ -254,11 +257,11 @@ luv2xyz(Triplet* in_out)
+         return;
+     }
+ 
+-    double var_u = in_out->b / (13.0 * in_out->a) + ref_u;
+-    double var_v = in_out->c / (13.0 * in_out->a) + ref_v;
+-    double y = l2y(in_out->a);
+-    double x = -(9.0 * y * var_u) / ((var_u - 4.0) * var_v - var_u * var_v);
+-    double z = (9.0 * y - (15.0 * var_v * y) - (var_v * x)) / (3.0 * var_v);
++    var_u = in_out->b / (13.0 * in_out->a) + ref_u;
++    var_v = in_out->c / (13.0 * in_out->a) + ref_v;
++    y = l2y(in_out->a);
++    x = -(9.0 * y * var_u) / ((var_u - 4.0) * var_v - var_u * var_v);
++    z = (9.0 * y - (15.0 * var_v * y) - (var_v * x)) / (3.0 * var_v);
+     in_out->a = x;
+     in_out->b = y;
+     in_out->c = z;
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index ca7fd1b..5d61412 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -8,8 +8,8 @@ add_library(mCtrl SHARED
+                                     ../include/mCtrl/_common.h
+                                     ../include/mCtrl/_defs.h
+     anim.c          anim.h
+-    button.c        button.h        ../include/mCtrl/button.h
+-    chart.c         chart.h         ../include/mCtrl/chart.h
++    #button.c        button.h        ../include/mCtrl/button.h
++    #chart.c         chart.h         ../include/mCtrl/chart.h
+     color.c         color.h
+     compat.c        compat.h
+     debug.c         debug.h
+@@ -17,14 +17,14 @@ add_library(mCtrl SHARED
+     doublebuffer.c  doublebuffer.h
+     dsa.c           dsa.h
+     dwm.c           dwm.h
+-    expand.c        expand.h        ../include/mCtrl/expand.h
++    #expand.c        expand.h        ../include/mCtrl/expand.h
+     generic.c       generic.h
+-    grid.c          grid.h          ../include/mCtrl/grid.h
+-    html.c          html.h          ../include/mCtrl/html.h
+-    imgview.c       imgview.h       ../include/mCtrl/imgview.h
++    #grid.c          grid.h          ../include/mCtrl/grid.h
++    #html.c          html.h          ../include/mCtrl/html.h
++    #imgview.c       imgview.h       ../include/mCtrl/imgview.h
+     labeledit.c     labeledit.h
+     mditab.c        mditab.h        ../include/mCtrl/mditab.h
+-    menubar.c       menubar.h       ../include/mCtrl/menubar.h
++    #menubar.c       menubar.h       ../include/mCtrl/menubar.h
+     misc.c          misc.h
+     module.c        module.h
+     mousedrag.c     mousedrag.h
+diff --git a/src/dsa.c b/src/dsa.c
+index 342fa67..8930afc 100644
+--- a/src/dsa.c
++++ b/src/dsa.c
+@@ -108,11 +108,12 @@ dsa_insert_raw(dsa_t* dsa, WORD index)
+     if(dsa->size >= dsa->capacity) {
+         BYTE* buffer;
+         size_t sz = (size_t)dsa->size * (size_t)dsa->item_size;
+-
+-        if(sz > DSA_BIGBUFFER_SIZE) {
+-            sz += DSA_BIGBUFFER_BOOKKEEPING_PADDING + dsa->item_size - 1;
+-            sz %= dsa->item_size;
+-        }
++		
++		//The BIGBUFFER optimizations lead to buffers too small to cover the requested amount of items, hence heap overflows occur once they kick in.
++        //if(sz > DSA_BIGBUFFER_SIZE) {
++        //    sz += DSA_BIGBUFFER_BOOKKEEPING_PADDING + dsa->item_size - 1;
++        //    sz %= dsa->item_size;
++        //}
+ 
+         /* Make the buffer about twice as large, but round up to power of two. */
+         sz = 2 * sz;
+@@ -126,10 +127,10 @@ dsa_insert_raw(dsa_t* dsa, WORD index)
+         /* Make sure at least 4 items fit inside. */
+         sz = MC_MAX(sz, 4 * dsa->item_size);
+ 
+-        if(sz > DSA_BIGBUFFER_SIZE) {
+-            sz -= DSA_BIGBUFFER_BOOKKEEPING_PADDING;
+-            sz %= dsa->item_size;
+-        }
++        //if(sz > DSA_BIGBUFFER_SIZE) {
++        //    sz -= DSA_BIGBUFFER_BOOKKEEPING_PADDING;
++        //    sz %= dsa->item_size;
++        //}
+ 
+         DSA_TRACE("dsa_insert_raw: Capacity growing: %d -> %d",
+                     (int) dsa->capacity, (int) (sz / dsa->item_size));
+@@ -200,20 +201,20 @@ dsa_remove(dsa_t* dsa, WORD index, dsa_dtor_t dtor_func)
+         BYTE* buffer;
+ 
+         sz = (size_t)dsa->capacity * (size_t)dsa->item_size;
+-        if(sz > DSA_BIGBUFFER_SIZE) {
+-            sz += DSA_BIGBUFFER_BOOKKEEPING_PADDING + dsa->item_size - 1;
+-            sz %= dsa->item_size;
+-        }
++        //if(sz > DSA_BIGBUFFER_SIZE) {
++        //    sz += DSA_BIGBUFFER_BOOKKEEPING_PADDING + dsa->item_size - 1;
++        //    sz %= dsa->item_size;
++        //}
+ 
+         sz = sz / 2;
+ 
+         /* Make sure at least 4 items fit inside. */
+         sz = MC_MAX(sz, 4 * dsa->item_size);
+ 
+-        if(sz > DSA_BIGBUFFER_SIZE) {
+-            sz -= DSA_BIGBUFFER_BOOKKEEPING_PADDING;
+-            sz %= dsa->item_size;
+-        }
++        //if(sz > DSA_BIGBUFFER_SIZE) {
++        //    sz -= DSA_BIGBUFFER_BOOKKEEPING_PADDING;
++        //    sz %= dsa->item_size;
++        //}
+ 
+         MC_ASSERT((size_t)dsa->size * (size_t)dsa->item_size < sz);
+ 
+diff --git a/src/mCtrl.def b/src/mCtrl.def
+index 0ef9bfd..5815a8c 100644
+--- a/src/mCtrl.def
++++ b/src/mCtrl.def
+@@ -9,10 +9,10 @@ EXPORTS
+     mcBufferedPaintRenderAnimation
+     mcBufferedPaintStopAllAnimations
+     mcBufferedPaintUnInit
+-    mcButton_Initialize
+-    mcButton_Terminate
+-    mcChart_Initialize
+-    mcChart_Terminate
++    ;mcButton_Initialize
++    ;mcButton_Terminate
++    ;mcChart_Initialize
++    ;mcChart_Terminate
+     mcCloseThemeData
+     mcCreateDialogIndirectParamA
+     mcCreateDialogIndirectParamW
+@@ -34,8 +34,8 @@ EXPORTS
+     mcEndBufferedAnimation
+     mcEndBufferedPaint
+     mcEndPanningFeedback
+-    mcExpand_Initialize
+-    mcExpand_Terminate
++    ;mcExpand_Initialize
++    ;mcExpand_Terminate
+     mcGetBufferedPaintBits
+     mcGetBufferedPaintDC
+     mcGetBufferedPaintTargetDC
+@@ -73,16 +73,16 @@ EXPORTS
+     mcGetThemeTextMetrics
+     mcGetThemeTransitionDuration
+     mcGetWindowTheme
+-    mcGrid_Initialize
+-    mcGrid_Terminate
++    ;mcGrid_Initialize
++    ;mcGrid_Terminate
+     mcHitTestThemeBackground
+-    mcHtml_Initialize
+-    mcHtml_Terminate
+-    mcImgView_Initialize
+-    mcImgView_Terminate
++    ;mcHtml_Initialize
++    ;mcHtml_Terminate
++    ;mcImgView_Initialize
++    ;mcImgView_Terminate
+     mcIsAppThemed
+     mcIsCompositionActive
+-    mcIsMenubarMessage
++    ;mcIsMenubarMessage
+     mcIsThemeActive
+     mcIsThemeBackgroundPartiallyTransparent
+     mcIsThemeDialogTextureEnabled
+@@ -90,9 +90,9 @@ EXPORTS
+     mcMditab_DefWindowProc
+     mcMditab_Initialize
+     mcMditab_Terminate
+-    mcMenubar_HandleRebarChevronPushed
+-    mcMenubar_Initialize
+-    mcMenubar_Terminate
++    ;mcMenubar_HandleRebarChevronPushed
++    ;mcMenubar_Initialize
++    ;mcMenubar_Terminate
+     mcOpenThemeData
+     mcOpenThemeDataEx
+     mcSetThemeAppProperties
+diff --git a/src/mditab.c b/src/mditab.c
+index a0452e4..4e747bc 100644
+--- a/src/mditab.c
++++ b/src/mditab.c
+@@ -92,11 +92,13 @@ static DWORD mditab_wdl_flags = WD_INIT_IMAGEAPI | WD_INIT_STRINGAPI;
+ #define BTNID_RSCROLL                 1
+ #define BTNID_LIST                    2
+ #define BTNID_CLOSE                   3
++#define BTNID_OPEN                    4
+ 
+ #define BTNMASK_LSCROLL              (1 << BTNID_LSCROLL)
+ #define BTNMASK_RSCROLL              (1 << BTNID_RSCROLL)
+ #define BTNMASK_LIST                 (1 << BTNID_LIST)
+ #define BTNMASK_CLOSE                (1 << BTNID_CLOSE)
++#define BTNMASK_OPEN                 (1 << BTNID_OPEN)
+ 
+ #define BTNMASK_SCROLL               (BTNMASK_LSCROLL | BTNMASK_RSCROLL)
+ 
+@@ -119,6 +121,7 @@ typedef struct mditab_item_tag mditab_item_t;
+ struct mditab_item_tag {
+     TCHAR* text;
+     LPARAM lp;
++	DWORD hide_close : 1;
+     SHORT img;
+     USHORT ideal_width;  /* Cached result of mditab_item_ideal_width() */
+     int x0;              /* Relative to mditab_t::area_margin0. */
+@@ -138,7 +141,8 @@ struct mditab_tag {
+     anim_t* animation;
+     dsa_t items;
+     DWORD style                 : 16;
+-    DWORD btn_mask              :  4;
++	DWORD custom_style          :  1;
++    DWORD btn_mask              :  5;
+     DWORD focus                 :  1;
+     DWORD no_redraw             :  1;
+     DWORD rtl                   :  1;
+@@ -148,11 +152,13 @@ struct mditab_tag {
+     DWORD dirty_layout          :  1;
+     DWORD dirty_scroll          :  1;
+     DWORD btn_pressed           :  1;  /* Button ABS(item_hot) is pressed. */
++	DWORD btn_pressed_cold      :  1;  /* Button is pressed but cursor is not over it. */
+     DWORD scrolling_to_item     :  1;  /* If set, scroll_x_desired is item index. */
+     DWORD dwm_extend_frame      :  1;
+     DWORD mouse_captured        :  1;
+     DWORD itemdrag_considering  :  1;
+     DWORD itemdrag_started      :  1;
++	DWORD hot_itemclose         :  1;
+     int scroll_x;
+     int scroll_x_desired;
+     int scroll_x_max;
+@@ -178,6 +184,7 @@ typedef struct mditab_item_layout_tag mditab_item_layout_t;
+ struct mditab_item_layout_tag {
+     WD_RECT icon_rect;
+     WD_RECT text_rect;
++    WD_RECT close_rect;
+ };
+ 
+ 
+@@ -292,6 +299,7 @@ mditab_get_dispinfo(mditab_t* mditab, int index, mditab_item_t* item,
+     info.item.pszText = NULL;
+     info.item.iImage = MC_I_IMAGENONE;
+     info.item.lParam = item->lp;
++	info.item.bDisableClose = item->hide_close ? TRUE : FALSE;
+     MC_SEND(mditab->notify_win, WM_NOTIFY, 0, &info);
+ 
+     /* If needed, convert the text from parent to the expected format. */
+@@ -314,6 +322,11 @@ mditab_free_dispinfo(mditab_t* mditab, mditab_item_t* item, mditab_dispinfo_t* d
+         free(di->text);
+ }
+ 
++static inline int
++mditab_button_size(const RECT* client)
++{
++    return mc_height(client) - 4;
++}
+ 
+ static inline USHORT
+ mditab_item_current_width(mditab_t* mditab, WORD index)
+@@ -346,10 +359,16 @@ mditab_item_ideal_width(mditab_t* mditab, WORD index)
+         }
+ 
+         if(di.text != NULL) {
+-            w += ceilf(wdStringWidth(NULL, mditab->font, di.text));
++			w += ceilf(wdStringWidth(NULL, mditab->font, di.text)) + ceilf(wdStringWidth(NULL, mditab->font, TEXT("...")));
+             w += MDITAB_ITEM_PADDING;
+         }
+ 
++		if((mditab->style & MC_MTS_CBMASK) == MC_MTS_CBONEACHTAB || (mditab->style & MC_MTS_CBMASK) == MC_MTS_CBONACTIVETAB) {
++			RECT client;
++			GetClientRect(mditab->win, &client);
++			w += mditab_button_size(&client);
++		}
++
+         item->ideal_width = w;
+         mditab_free_dispinfo(mditab, item, &di);
+     }
+@@ -369,12 +388,6 @@ mditab_reset_ideal_widths(mditab_t* mditab)
+     }
+ }
+ 
+-static inline int
+-mditab_button_size(const RECT* client)
+-{
+-    return mc_height(client) - 4;
+-}
+-
+ static void
+ mditab_button_rect(mditab_t* mditab, int btn_id, RECT* rect)
+ {
+@@ -395,6 +408,14 @@ mditab_button_rect(mditab_t* mditab, int btn_id, RECT* rect)
+     }
+ 
+     x0 = client.right - btn_size;
++    if(btn_id == BTNID_OPEN) {
++        mc_rect_set(rect, x0, y0, x0 + btn_size, y0 + btn_size);
++        return;
++    }
++
++	if(mditab->btn_mask & (1 << BTNID_OPEN))
++		x0 -= btn_size;
++
+     if(btn_id == BTNID_CLOSE) {
+         mc_rect_set(rect, x0, y0, x0 + btn_size, y0 + btn_size);
+         return;
+@@ -417,7 +438,7 @@ mditab_button_rect(mditab_t* mditab, int btn_id, RECT* rect)
+ 
+ static void
+ mditab_setup_item_layout(mditab_t* mditab, mditab_dispinfo_t* di, int x0, int y0,
+-                         int x1, int y1, mditab_item_layout_t* layout)
++                         int x1, int y1, mditab_item_layout_t* layout, BOOL is_active)
+ {
+     int contents_x = x0 + MDITAB_ITEM_PADDING;
+ 
+@@ -433,9 +454,23 @@ mditab_setup_item_layout(mditab_t* mditab, mditab_dispinfo_t* di, int x0, int y0
+         contents_x += icon_w + MDITAB_ITEM_ICON_MARGIN;
+     }
+ 
++	if((mditab->style & MC_MTS_CBMASK) == MC_MTS_CBONEACHTAB || (mditab->style & MC_MTS_CBMASK) == MC_MTS_CBONACTIVETAB) {
++		RECT client;
++		int btn_size;
++		
++		GetClientRect(mditab->win, &client);
++		btn_size = mditab_button_size(&client);
++		layout->close_rect.x0 = x1 - btn_size;
++		layout->close_rect.x1 = x1;
++		layout->close_rect.y0 = y0 + (y1 - y0 - btn_size + 1) / 2;
++		layout->close_rect.y1 = layout->close_rect.y0 + btn_size;
++		if ((mditab->style & MC_MTS_CBMASK) == MC_MTS_CBONEACHTAB || is_active)
++			x1 = layout->close_rect.x0;
++	}
++
+     if(di->text != NULL) {
+         SIZE size;
+-
++		
+         mc_font_size(mditab->gdi_font, &size, TRUE);
+         layout->text_rect.x0 = contents_x;
+         layout->text_rect.y0 = (y0 + y1 - size.cy) / 2.0f;
+@@ -508,12 +543,17 @@ mditab_hit_test_item(mditab_t* mditab, MC_MTHITTESTINFO* hti,
+         mditab_item_layout_t layout;
+ 
+         di.text = NULL;  /* <-- little hack: we only need layout.icon_rect. */
+-        mditab_setup_item_layout(mditab, &di, x0, y0, x1, y1, &layout);
++        mditab_setup_item_layout(mditab, &di, x0, y0, x1, y1, &layout, TRUE);
+ 
+         if(mditab->img_list != NULL  &&
+            layout.icon_rect.x0 <= x  &&  x < layout.icon_rect.x1  &&
+            layout.icon_rect.y0 <= y  &&  y < layout.icon_rect.y1)
+             hti->flags = MC_MTHT_ONITEMICON;
++		else if(((mditab->style & MC_MTS_CBMASK) == MC_MTS_CBONEACHTAB || 
++				((mditab->style & MC_MTS_CBMASK) == MC_MTS_CBONACTIVETAB && mditab->item_selected == index)) &&
++		        layout.close_rect.x0 <= x  &&  x < layout.close_rect.x1  &&
++		        layout.close_rect.y0 <= y  &&  y < layout.close_rect.y1)
++            hti->flags = MC_MTHT_ONITEMCLOSEBUTTON;
+         else
+             hti->flags = MC_MTHT_ONITEMLABEL;
+     }
+@@ -526,7 +566,7 @@ mditab_hit_test(mditab_t* mditab, MC_MTHITTESTINFO* hti, BOOL want_hti_item_flag
+ {
+     static const UINT btn_map[] = {
+         MC_MTHT_ONLEFTSCROLLBUTTON, MC_MTHT_ONRIGHTSCROLLBUTTON,
+-        MC_MTHT_ONLISTBUTTON, MC_MTHT_ONCLOSEBUTTON
++		MC_MTHT_ONLISTBUTTON, MC_MTHT_ONCLOSEBUTTON, MC_MTHT_ONOPENBUTTON
+     };
+ 
+     RECT client;
+@@ -625,7 +665,7 @@ mditab_invalidate_item(mditab_t* mditab, WORD index)
+ 
+     if(mditab->no_redraw)
+         return;
+-
++	
+     item = mditab_item(mditab, index);
+ 
+     GetClientRect(mditab->win, &rect);
+@@ -650,19 +690,20 @@ mditab_invalidate_button(mditab_t* mditab, int btn_id)
+ }
+ 
+ static void
+-mditab_set_hot(mditab_t* mditab, SHORT hot, BOOL is_pressed)
++mditab_set_hot(mditab_t* mditab, SHORT hot, BOOL is_pressed, BOOL is_itemclose)
+ {
+-    if(hot == mditab->item_hot  &&  is_pressed == mditab->btn_pressed)
++    if(hot == mditab->item_hot  &&  is_pressed == mditab->btn_pressed  &&  is_itemclose == mditab->hot_itemclose)
+         return;
+ 
+     if(mditab->item_hot != ITEM_HOT_NONE) {
+         if(mditab->item_hot >= 0)
+-            mditab_invalidate_item(mditab, mditab->item_hot);
++			mditab_invalidate_item(mditab, mditab->item_hot);
+         else
+             mditab_invalidate_button(mditab, mditab_hot_button(mditab));
+     }
+ 
+     mditab->item_hot = hot;
++	mditab->hot_itemclose = is_itemclose;
+     mditab->btn_pressed = is_pressed;
+ 
+     if(mditab->item_hot != ITEM_HOT_NONE) {
+@@ -678,12 +719,12 @@ mditab_set_hot(mditab_t* mditab, SHORT hot, BOOL is_pressed)
+     }
+ }
+ 
+-static inline void mditab_set_hot_item(mditab_t* mditab, WORD hot_item)
+-        { mditab_set_hot(mditab, hot_item, FALSE); }
++static inline void mditab_set_hot_item(mditab_t* mditab, WORD hot_item, BOOL is_itemclose)
++        { mditab_set_hot(mditab, hot_item, FALSE, is_itemclose); }
+ static inline void mditab_set_hot_button(mditab_t* mditab, int btn_id, BOOL is_pressed)
+-        { mditab_set_hot(mditab, -(SHORT)btn_id - 1, is_pressed); }
++        { mditab_set_hot(mditab, -(SHORT)btn_id - 1, is_pressed, FALSE); }
+ static inline void mditab_reset_hot(mditab_t* mditab)
+-        { mditab_set_hot(mditab, ITEM_HOT_NONE, FALSE); }
++        { mditab_set_hot(mditab, ITEM_HOT_NONE, FALSE, FALSE); }
+ 
+ static void
+ mditab_set_item_order(mditab_t* mditab, WORD old_index, WORD new_index)
+@@ -836,20 +877,21 @@ mditab_mouse_move(mditab_t* mditab, int x, int y)
+ {
+     int index;
+     MC_MTHITTESTINFO hti;
+-
+-    if(mditab->btn_pressed)
+-        return;
++	BOOL coldnow = mditab->btn_pressed_cold;
+ 
+     /* Consider start of item dragging. */
+-    if(mditab->itemdrag_considering) {
++    if(mditab->itemdrag_considering  &&  !mditab->btn_pressed) {
+         MC_ASSERT(!mditab->itemdrag_started);
+ 
+         switch(mousedrag_consider_start(mditab->win, x, y)) {
+             case MOUSEDRAG_STARTED:
+                 mditab->itemdrag_considering = FALSE;
+                 mditab->itemdrag_started = TRUE;
+-                SetCapture(mditab->win);
+-                mditab->mouse_captured = TRUE;
++				if (!mditab->mouse_captured)
++				{
++					SetCapture(mditab->win);
++					mditab->mouse_captured = TRUE;
++				}
+                 break;
+ 
+             case MOUSEDRAG_CONSIDERING:
+@@ -858,12 +900,18 @@ mditab_mouse_move(mditab_t* mditab, int x, int y)
+ 
+             case MOUSEDRAG_CANCELED:
+                 mditab->itemdrag_considering = FALSE;
++				if (mditab->mouse_captured)
++				{
++					mditab->mouse_captured = FALSE;
++					ReleaseCapture();
++					mc_send_notify(mditab->notify_win, mditab->win, NM_RELEASEDCAPTURE);
++				}
+                 break;
+         }
+     }
+ 
+     /* Handle drag-and-drop. */
+-    if(mditab->itemdrag_started) {
++    if(mditab->itemdrag_started  &&  !mditab->btn_pressed) {
+         MC_ASSERT(!mditab->itemdrag_considering);
+         mditab_do_drag(mditab, x, y);
+         return;
+@@ -871,28 +919,63 @@ mditab_mouse_move(mditab_t* mditab, int x, int y)
+ 
+     hti.pt.x = x;
+     hti.pt.y = y;
+-    index = mditab_hit_test(mditab, &hti, FALSE);
++    index = mditab_hit_test(mditab, &hti, TRUE);
+ 
+     if(index >= 0) {
+-        mditab_set_hot_item(mditab, index);
++		mditab_item_t *item = mditab_item(mditab, index);
++		if(mditab->btn_pressed) {
++			if (index != mditab->item_hot || (hti.flags & MC_MTHT_ONITEMCLOSEBUTTON) == 0 || item->hide_close)
++				coldnow = TRUE;
++			else
++				coldnow = FALSE;
++		}
++		else {
++			mditab_set_hot_item(mditab, index, (hti.flags & MC_MTHT_ONITEMCLOSEBUTTON) != 0 && !item->hide_close);
++		}
+     } else {
+         int btn_id = -1;
++		mditab_item_t *item = NULL;
++		if (mditab_count(mditab) > 0 && 
++			mditab->item_selected >= 0 && mditab->item_selected < mditab_count(mditab))
++			item = mditab_item(mditab, mditab->item_selected);
+ 
+         switch(hti.flags & MC_MTHT_ONBUTTON) {
+             case MC_MTHT_ONLEFTSCROLLBUTTON:    btn_id = BTNID_LSCROLL; break;
+             case MC_MTHT_ONRIGHTSCROLLBUTTON:   btn_id = BTNID_RSCROLL; break;
+             case MC_MTHT_ONLISTBUTTON:          btn_id = BTNID_LIST; break;
+-            case MC_MTHT_ONCLOSEBUTTON:         btn_id = BTNID_CLOSE; break;
++            case MC_MTHT_ONCLOSEBUTTON:         btn_id = BTNID_CLOSE; 
++				if (item && item->hide_close)
++					btn_id = -1;
++				break;
++            case MC_MTHT_ONOPENBUTTON:          btn_id = BTNID_OPEN; break;
+         }
+-
+-        if(btn_id >= 0)
+-            mditab_set_hot_button(mditab, btn_id, FALSE);
+-        else
+-            mditab_reset_hot(mditab);
+-    }
++		if(mditab->btn_pressed) {
++			if (btn_id == -1  ||  mditab_hot_button(mditab) != btn_id)
++				coldnow = TRUE;
++			else
++				coldnow = FALSE;
++		}
++		else {
++			if(btn_id >= 0)
++				mditab_set_hot_button(mditab, btn_id, FALSE);
++			else
++				mditab_reset_hot(mditab);
++		}
++    }
++
++	if(coldnow != mditab->btn_pressed_cold) { /* Redraw if the cold state changed for a pressed button */
++		mditab->btn_pressed_cold = coldnow;
++		if (mditab->item_hot >= 0)
++			mditab_invalidate_item(mditab, mditab->item_hot);
++		else {
++			int btn_id = mditab_hot_button(mditab);
++			if (btn_id >= 0)
++				mditab_invalidate_button(mditab, btn_id);
++		}
++	}
+ 
+     /* Ask for WM_MOUSELEAVE. */
+-    if(mditab->item_hot != ITEM_HOT_NONE  &&  !mditab->tracking_leave) {
++    if(mditab->item_hot != ITEM_HOT_NONE  &&  !mditab->tracking_leave  &&  !mditab->btn_pressed) {
+         mc_track_mouse(mditab->win, TME_LEAVE);
+         mditab->tracking_leave = TRUE;
+     }
+@@ -1007,6 +1090,9 @@ mditab_update_layout(mditab_t* mditab, BOOL refresh)
+     if((mditab->style & MC_MTS_CBMASK) == MC_MTS_CBONTOOLBAR)
+         btn_mask |= BTNMASK_CLOSE;
+ 
++	if(mditab->custom_style & MC_MTCS_OPENBTN)
++        btn_mask |= BTNMASK_OPEN;
++
+     if(((mditab->style & MC_MTS_TLBMASK) == MC_MTS_TLBALWAYS)  ||
+        ((mditab->style & MC_MTS_TLBMASK) == MC_MTS_TLBONSCROLL  &&  need_scroll))
+         btn_mask |= BTNMASK_LIST;
+@@ -1027,6 +1113,8 @@ again_with_scroll:
+         area_margin1 += btn_size;
+     if(btn_mask & BTNMASK_CLOSE)
+         area_margin1 += btn_size;
++    if(btn_mask & BTNMASK_OPEN)
++        area_margin1 += btn_size;
+ 
+     area_width = mc_width(&client) - area_margin0 - area_margin1;
+ 
+@@ -1080,9 +1168,8 @@ again_without_animation:
+             mditab_item_t* dragged = mditab_item(mditab, mousedrag_index);
+             USHORT w_dragged = dragged->x1 - dragged->x0;
+             UINT x = 0;
+-            BOOL found_gap = FALSE;
+-
+-            /* Move all items out of the way. */
++			UINT offset = 0;
++			
+             for(i = 0; i < n; i++) {
+                 mditab_item_t* item = mditab_item(mditab, i);
+                 USHORT w;
+@@ -1093,14 +1180,38 @@ again_without_animation:
+                 w = item->x1 - item->x0;
+                 item->x0 = x;
+                 item->x1 = x + w;
+-
+-                if(!found_gap  &&  x + (w+1)/2 > dragged->x0) {
+-                    item->x0 += w_dragged;
+-                    item->x1 += w_dragged;
+-                    found_gap = TRUE;
+-                }
+-
+                 x = item->x1;
++			}
++			if(mditab->style & MC_MTS_RALIGNITEMS) { /* Right align if the visible area is not filled */
++				if (x + w_dragged < area_width)
++					offset = area_width - x;
++			}
++            /* Move all items out of the way. */
++            for(i = 0; i < n; i++) {
++                mditab_item_t* item = mditab_item(mditab, i);
++                USHORT w;
++                if(item == dragged)
++                    continue;
++				
++                w = item->x1 - item->x0;
++				item->x0 += offset; //Apply any potential 
++				item->x1 += offset;
++                x = item->x0;
++
++				if (offset == 0 && x + (w+1)/2 > dragged->x0) /* Right align is inactive */
++				{
++					//The position of the first item in the loop where this condition applies
++					// is where the dragged item would be inserted.
++					item->x0 += w_dragged; //Move this item to the right.
++					item->x1 += w_dragged;
++				}
++				else if (offset != 0 && x + (w+1)/2 <= dragged->x1) /* Right align is active */
++				{
++					//The position of the last item in the loop where this condition applies
++					// is where the dragged item would be inserted.
++					item->x0 -= w_dragged; //Move this item to the left.
++					item->x1 -= w_dragged;
++				}
+             }
+         } else if(min_width == 0) {     /* Cases #1, #2, #3, #4 */
+             mditab_update_item_widths(mditab, 0, n, def_width);
+@@ -1153,6 +1264,19 @@ again_without_animation:
+                 mditab_update_item_widths(mditab, w_extra, n, w_base);
+             }
+         }
++		if((mditab->style & MC_MTS_RALIGNITEMS)
++			&& mditab_item(mditab, 0)->x0 == 0
++			&& !mditab->itemdrag_started) { /* Right align if the visible area is not filled */
++			mditab_item_t* last_item = mditab_item(mditab, n - 1);
++			if (last_item->x1 < area_width) {
++				UINT offset = area_width - last_item->x1;
++				for (i = 0; i < n; i++) {
++                    mditab_item_t* item = mditab_item(mditab, i);
++					item->x0 += offset;
++					item->x1 += offset;
++				}
++			}
++		}
+     }
+ 
+     /* Animate, i.e. compute geometry for a new animation frame. */
+@@ -1177,10 +1301,21 @@ again_without_animation:
+ 
+     /* Scrolling */
+     scroll_x = mditab->scroll_x;
+-    if(n > 0  &&  mditab_item(mditab, n-1)->x1 > area_width)
+-        mditab->scroll_x_max = mditab_item(mditab, n-1)->x1 - area_width;
+-    else
+-        mditab->scroll_x_max = 0;
++	{
++		UINT rightmost_x1 = (n > 0) ? mditab_item(mditab, n-1)->x1 : 0;
++		if(n > 1  &&  mditab->itemdrag_started) { /* Special behaviour for drag: keep the width of the dragged item in mind */
++			mditab_item_t* dragged = mditab_item(mditab, mousedrag_index);
++			//The dragged item may be the last item even if it is not rightmost anymore.
++			mditab_item_t* last_item = mditab_item(mditab, (mousedrag_index == n-1) ? (n-2) : (n-1));
++			rightmost_x1 = last_item->x1;
++			if (dragged->x0 > last_item->x0) /* If the space for the dragged item is rightmost, .. */
++				rightmost_x1 += dragged->x1 - dragged->x0; /* .. add its width to the scrollable area */
++		}
++		if(rightmost_x1 > area_width)
++			mditab->scroll_x_max = rightmost_x1 - area_width;
++		else
++			mditab->scroll_x_max = 0;
++	}
+ 
+     if(mditab->scrolling_to_item) {
+         mditab_item_t* item = mditab_item(mditab, mditab->scroll_x_desired);
+@@ -1267,7 +1402,8 @@ mditab_do_paint_button(mditab_t* mditab, mditab_xdraw_ctx_t* ctx, int btn_id,
+         { 0.6f, 0.3f, 0.4f, 0.5f,   0.4f, 0.5f, 0.6f, 0.7f },
+         { 0.4f, 0.3f, 0.6f, 0.5f,   0.6f, 0.5f, 0.4f, 0.7f },
+         { 0.3f, 0.4f, 0.5f, 0.6f,   0.5f, 0.6f, 0.7f, 0.4f },
+-        { 0.3f, 0.3f, 0.7f, 0.7f,   0.3f, 0.7f, 0.7f, 0.3f }
++        { 0.3f, 0.3f, 0.7f, 0.7f,   0.3f, 0.7f, 0.7f, 0.3f },
++        { 0.25f, 0.5f, 0.75f, 0.5f,   0.5f, 0.25f, 0.5f, 0.75f }
+     };
+ 
+     float x = rect->x0;
+@@ -1283,8 +1419,14 @@ mditab_do_paint_button(mditab_t* mditab, mditab_xdraw_ctx_t* ctx, int btn_id,
+                 : WD_COLOR_FROM_GDI_EX(127, GetSysColor(COLOR_BTNFACE)));
+         wdSetSolidBrushColor(ctx->solid_brush, c);
+ 
+-        wdFillCircle(canvas, ctx->solid_brush,
+-                x + w/2.0f, y + h/2.0f, w / 2.0f - 1.0f);
++		if(mditab->style & MC_MTS_ROUNDEDITEMS) {
++			wdFillCircle(canvas, ctx->solid_brush,
++                x + w/2.0f, y + h/2.0f, h / 2.0f - 1.0f);
++		}
++		else {
++			wdFillRect(canvas, ctx->solid_brush, 
++				x + w * 0.1f, y + h * 0.1f, x + w * 0.9f, y + h * 0.9f);
++		}
+     }
+ 
+     stroke_width = (mc_win_version >= MC_WIN_10 ? 1.0f : 2.0f);
+@@ -1302,6 +1444,22 @@ mditab_do_paint_button(mditab_t* mditab, mditab_xdraw_ctx_t* ctx, int btn_id,
+             x + w * dies[btn_id].bx0, y + h * dies[btn_id].by0,
+             x + w * dies[btn_id].bx1, y + h * dies[btn_id].by1,
+             stroke_width);
++
++	if(state == BTNSTATE_HOT  ||  state == BTNSTATE_PRESSED) {
++		c = WD_COLOR_FROM_GDI_EX(
++				(state == BTNSTATE_HOT ? 128 : 192), 
++				WD_COLOR_TO_GDI(c));
++		wdSetSolidBrushColor(ctx->solid_brush, c);
++
++		if(mditab->style & MC_MTS_ROUNDEDITEMS) {
++			wdDrawCircle(canvas, ctx->solid_brush,
++					x + w/2.0f, y + h/2.0f, h / 2.0f - 1.0f, 1.0f);
++		}
++		else {
++			wdDrawRect(canvas, ctx->solid_brush, 
++				x + w * 0.1f, y + h * 0.1f, x + w * 0.9f, y + h * 0.9f, 1.0f);
++		}
++	}
+ }
+ 
+ static void
+@@ -1315,7 +1473,7 @@ mditab_paint_button(mditab_t* mditab, mditab_xdraw_ctx_t* ctx, int btn_id, BOOL
+     if(!enabled)
+         state = BTNSTATE_DISABLED;
+     else if(btn_id == mditab_hot_button(mditab))
+-        state = (mditab->btn_pressed ? BTNSTATE_PRESSED : BTNSTATE_HOT);
++        state = ((mditab->btn_pressed && !mditab->btn_pressed_cold) ? BTNSTATE_PRESSED : BTNSTATE_HOT);
+     else
+         state = BTNSTATE_NORMAL;
+ 
+@@ -1325,7 +1483,6 @@ mditab_paint_button(mditab_t* mditab, mditab_xdraw_ctx_t* ctx, int btn_id, BOOL
+     r.y0 = (float) rect.top;
+     r.x1 = (float) rect.right - 1;
+     r.y1 = (float) rect.bottom - 1;
+-
+     mditab_do_paint_button(mditab, ctx, btn_id, &r, state);
+ }
+ 
+@@ -1375,10 +1532,13 @@ mditab_paint_item(mditab_t* mditab, mditab_xdraw_ctx_t* ctx, const RECT* client,
+     WD_RECT blit_rect;
+     mditab_item_layout_t layout;
+     BOOL degenerate_shape = FALSE;
++	BOOL enabled;
++
++    enabled = IsWindowEnabled(mditab->win);
+ 
+     mditab_get_dispinfo(mditab, dsa_index(&mditab->items, item), item,
+                         &di, MC_MTIF_TEXT | MC_MTIF_IMAGE);
+-    mditab_setup_item_layout(mditab, &di, x0, y0, x1, y1, &layout);
++    mditab_setup_item_layout(mditab, &di, x0, y0, x1, y1, &layout, is_selected);
+ 
+     /* Construct a path defining shape of the item. */
+     path = wdCreatePath(canvas);
+@@ -1415,6 +1575,7 @@ mditab_paint_item(mditab_t* mditab, mditab_xdraw_ctx_t* ctx, const RECT* client,
+         wdAddLine(&sink, x1+r+5.0f, y1);
+         wdEndFigure(&sink, TRUE);
+     } else {
++		r = 0.0f;
+         wdBeginFigure(&sink, x0, y1);
+         wdAddLine(&sink, x0, y0);
+         wdAddLine(&sink, x1, y0);
+@@ -1467,6 +1628,21 @@ mditab_paint_item(mditab_t* mditab, mditab_xdraw_ctx_t* ctx, const RECT* client,
+                 ctx->solid_brush, WD_STR_NOWRAP | WD_STR_ENDELLIPSIS | WD_STR_MIDDLEALIGN);
+     }
+ 
++	if(((mditab->style & MC_MTS_CBMASK) == MC_MTS_CBONACTIVETAB && is_selected)
++		|| (mditab->style & MC_MTS_CBMASK) == MC_MTS_CBONEACHTAB) {
++		int state;
++
++		/* Determine button state */
++		if(!enabled || item->hide_close)
++			state = BTNSTATE_DISABLED;
++		else if(is_hot && mditab->hot_itemclose)
++			state = ((mditab->btn_pressed && !mditab->btn_pressed_cold) ? BTNSTATE_PRESSED : BTNSTATE_HOT);
++		else
++			state = BTNSTATE_NORMAL;
++		
++		mditab_do_paint_button(mditab, ctx, BTNID_CLOSE, &layout.close_rect, state);
++	}
++
+     /* Paint focus rect (if needed). */
+     if(is_selected  &&  mditab->focus  &&  !mditab->hide_focus  &&  di.text != NULL  &&
+        ((mditab->style & MC_MTS_FOCUSMASK) != MC_MTS_FOCUSNEVER))
+@@ -1561,7 +1737,11 @@ mditab_paint(void* ctrl, xdraw_ctx_t* raw_ctx)
+     if(mditab->btn_mask & BTNMASK_LSCROLL)
+         mditab_paint_button(mditab, ctx, BTNID_LSCROLL, (enabled && mditab->scroll_x > 0));
+     if(mditab->btn_mask & BTNMASK_CLOSE)
+-        mditab_paint_button(mditab, ctx, BTNID_CLOSE, (enabled && n > 0));
++		mditab_paint_button(mditab, ctx, BTNID_CLOSE, (enabled && n > 0 && 
++                                                       mditab->item_selected < n &&
++													   !mditab_item(mditab, mditab->item_selected)->hide_close));
++    if(mditab->btn_mask & BTNMASK_OPEN)
++        mditab_paint_button(mditab, ctx, BTNID_OPEN, enabled);
+     if(mditab->btn_mask & BTNMASK_LIST)
+         mditab_paint_button(mditab, ctx, BTNID_LIST, (enabled && n > 0));
+     if(mditab->btn_mask & BTNMASK_RSCROLL)
+@@ -1611,19 +1791,14 @@ mditab_paint(void* ctrl, xdraw_ctx_t* raw_ctx)
+ 
+             if(x1 <= area_x0 - r)
+                 continue;
+-            if(x0 > area_x1 + r)
++            if(x0 > area_x1 + r) {
++				if(mditab->itemdrag_started  &&  i < mousedrag_index)
++					continue;
+                 break;
++			}
+ 
+             /* We need to paint the dragged and selected item as last one, due
+              * to the overlaps. Remember its rect. */
+-            if(i == mditab->item_selected) {
+-                paint_selected_item = TRUE;
+-                sel_rect.x0 = x0;
+-                sel_rect.x1 = x1;
+-                sel_rect.y0 = (float) MDITAB_ITEM_TOP_MARGIN;
+-                sel_rect.y1 = client.bottom;
+-                continue;
+-            }
+             if(mditab->itemdrag_started  &&  i == mousedrag_index) {
+                 paint_drag_item = TRUE;
+                 drag_rect.x0 = x0;
+@@ -1632,6 +1807,14 @@ mditab_paint(void* ctrl, xdraw_ctx_t* raw_ctx)
+                 drag_rect.y1 = client.bottom;
+                 continue;
+             }
++            if(i == mditab->item_selected) {
++                paint_selected_item = TRUE;
++                sel_rect.x0 = x0;
++                sel_rect.x1 = x1;
++                sel_rect.y0 = (float) MDITAB_ITEM_TOP_MARGIN;
++                sel_rect.y1 = client.bottom;
++                continue;
++            }
+ 
+             /* Paint an item. */
+             item_rect.x0 = x0;
+@@ -1640,7 +1823,7 @@ mditab_paint(void* ctrl, xdraw_ctx_t* raw_ctx)
+             item_rect.y1 = client.bottom;
+             mditab_paint_item(mditab, ctx, &client, item, &item_rect,
+                               area_x0, area_x1, background_image, FALSE,
+-                              (i == mditab->item_hot));
++							  (i == mditab->item_hot));
+         }
+ 
+         /* Paint the selected item. */
+@@ -1760,6 +1943,7 @@ mditab_insert_item(mditab_t* mditab, int index, MC_MTITEM* id, BOOL unicode)
+     item->x0 = (index > 0  ?  mditab_item(mditab, index-1)->x1  :  0);
+     item->x1 = item->x0;
+     item->ideal_width = 0;
++	item->hide_close = ((id->dwMask & MC_MTIF_CLOSEFLAG) && id->bDisableClose) ? 1 : 0;
+ 
+     /* Update stored item indexes */
+     if(index <= mditab->item_selected)
+@@ -1823,6 +2007,8 @@ mditab_set_item(mditab_t* mditab, int index, MC_MTITEM* id, BOOL unicode)
+         item->img = (SHORT) id->iImage;
+     if(id->dwMask & MC_MTIF_PARAM)
+         item->lp = id->lParam;
++	if(id->dwMask & MC_MTIF_CLOSEFLAG)
++		item->hide_close = id->bDisableClose ? 1 : 0;
+ 
+     mditab_invalidate_item(mditab, index);
+     if(mditab->item_def_width == 0  &&  (id->dwMask & MC_MTIF_TEXT))
+@@ -1864,6 +2050,8 @@ mditab_get_item(mditab_t* mditab, int index, MC_MTITEM* id, BOOL unicode)
+         id->iImage = di.img;
+     if(id->dwMask & MC_MTIF_PARAM)
+         id->lParam = item->lp;
++	if(id->dwMask & MC_MTIF_CLOSEFLAG)
++		id->bDisableClose = item->hide_close ? TRUE : FALSE;
+ 
+     if(di_mask != 0)
+         mditab_free_dispinfo(mditab, item, &di);
+@@ -1932,7 +2120,8 @@ mditab_delete_item(mditab_t* mditab, int index)
+ 
+     if(index == mditab->item_mclose)
+         mditab->item_mclose = -1;
+-
++	
++    mditab_reset_hot(mditab);
+     /* Do the delete. */
+     mditab_invalidate_item(mditab, index);
+     mditab_notify_delete_item(mditab, index);
+@@ -1956,7 +2145,6 @@ mditab_delete_item(mditab_t* mditab, int index)
+             mditab_cancel_drag(mditab);
+         }
+     }
+-    mditab_reset_hot(mditab);
+ 
+     /* Refresh */
+     mditab_update_layout(mditab, TRUE);
+@@ -2194,6 +2382,18 @@ mditab_close_item(mditab_t* mditab, int index)
+         return FALSE;
+ }
+ 
++static void
++mditab_notify_open_item(mditab_t* mditab)
++{
++    NMHDR notify;
++
++    notify.hwndFrom = mditab->win;
++    notify.idFrom = GetDlgCtrlID(mditab->win);
++    notify.code = MC_MTN_OPENITEM;
++
++    MC_SEND(mditab->notify_win, WM_NOTIFY, notify.idFrom, &notify);
++}
++
+ static BOOL
+ mditab_set_item_width(mditab_t* mditab, MC_MTITEMWIDTH* tw)
+ {
+@@ -2210,7 +2410,7 @@ mditab_set_item_width(mditab_t* mditab, MC_MTITEMWIDTH* tw)
+         min_w = DEFAULT_ITEM_MIN_WIDTH;
+     }
+ 
+-    if(def_w < min_w)
++    if(def_w > 0 && def_w < min_w)
+         def_w = min_w;
+ 
+     if(def_w == mditab->item_def_width  &&  min_w == mditab->item_min_width)
+@@ -2382,43 +2582,70 @@ mditab_left_button_down(mditab_t* mditab, UINT keys, short x, short y)
+ 
+     hti.pt.x = x;
+     hti.pt.y = y;
+-    index = mditab_hit_test(mditab, &hti, FALSE);
++    index = mditab_hit_test(mditab, &hti, TRUE);
+ 
+     MDITAB_TRACE("mditab_left_button_down(): hittest index %d, flags 0x%x",
+                  index, hti.flags);
+ 
+     if(index >= 0) {
+-        /* Handle item selection. */
+-        if(index == mditab->item_selected) {
+-            if((mditab->style & MC_MTS_FOCUSMASK) != MC_MTS_FOCUSNEVER)
+-                SetFocus(mditab->win);
+-        } else {
+-            mditab_set_cur_sel(mditab, index);
+-        }
+-
+-        /* It can also be start of a drag operation. */
+-        if(mditab->style & MC_MTS_DRAGDROP) {
+-            RECT item_rect;
+-            BOOL can_consider;
+-
+-            MC_ASSERT(!mditab->itemdrag_considering);
+-            MC_ASSERT(!mditab->itemdrag_started);
+-
+-            mditab_get_item_rect(mditab, index, &item_rect, TRUE);
+-            can_consider = mousedrag_set_candidate(mditab->win, x, y,
+-                        x - item_rect.left, y - item_rect.top, index, 0);
+-            if(can_consider)
+-                mditab->itemdrag_considering = TRUE;
+-        }
++		if (hti.flags & MC_MTHT_ONITEMCLOSEBUTTON)
++		{
++			mditab_item_t *item = mditab_item(mditab, index);
++			if (!item->hide_close)
++			{
++				SetCapture(mditab->win);
++				mditab->mouse_captured = TRUE;
++				mditab->btn_pressed = TRUE;
++				mditab->btn_pressed_cold = FALSE;
++				mditab_invalidate_item(mditab, index);
++			}
++		}
++		else
++		{
++			/* Handle item selection. */
++			if(index == mditab->item_selected) {
++				if((mditab->style & MC_MTS_FOCUSMASK) != MC_MTS_FOCUSNEVER)
++					SetFocus(mditab->win);
++			} else {
++				mditab_set_cur_sel(mditab, index);
++			}
++
++			/* It can also be start of a drag operation. */
++			if(mditab->style & MC_MTS_DRAGDROP) {
++				RECT item_rect;
++				BOOL can_consider;
++
++				MC_ASSERT(!mditab->itemdrag_considering);
++				MC_ASSERT(!mditab->itemdrag_started);
++
++				mditab_get_item_rect(mditab, index, &item_rect, TRUE);
++				can_consider = mousedrag_set_candidate(mditab->win, x, y,
++							x - item_rect.left, y - item_rect.top, index, 0);
++				if(can_consider)
++				{
++					SetCapture(mditab->win);
++					mditab->mouse_captured = TRUE;
++					mditab->itemdrag_considering = TRUE;
++				}
++			}
++		}
+     } else {
+         /* Handle auxiliary buttons */
+         int btn_id = -1;
++		mditab_item_t *item = NULL;
++		if (mditab_count(mditab) > 0 && 
++			mditab->item_selected >= 0 && mditab->item_selected < mditab_count(mditab))
++			item = mditab_item(mditab, mditab->item_selected);
+ 
+         switch(hti.flags) {
+             case MC_MTHT_ONLEFTSCROLLBUTTON:   btn_id = BTNID_LSCROLL; break;
+             case MC_MTHT_ONRIGHTSCROLLBUTTON:  btn_id = BTNID_RSCROLL; break;
+             case MC_MTHT_ONLISTBUTTON:         btn_id = BTNID_LIST; break;
+-            case MC_MTHT_ONCLOSEBUTTON:        btn_id = BTNID_CLOSE; break;
++            case MC_MTHT_ONCLOSEBUTTON:        btn_id = BTNID_CLOSE;
++				if (item && item->hide_close)
++					btn_id = -1;
++				break;
++            case MC_MTHT_ONOPENBUTTON:         btn_id = BTNID_OPEN; break;
+         }
+ 
+         if(btn_id >= 0) {
+@@ -2429,6 +2656,7 @@ mditab_left_button_down(mditab_t* mditab, UINT keys, short x, short y)
+ 
+                 mditab_button_rect(mditab, BTNID_LIST, &btn_rect);
+                 mditab->btn_pressed = TRUE;
++				mditab->btn_pressed_cold = FALSE;
+                 RedrawWindow(mditab->win, &btn_rect, NULL, RDW_INTERNALPAINT);
+                 mditab_list_items(mditab);
+                 mditab->btn_pressed = FALSE;
+@@ -2437,6 +2665,7 @@ mditab_left_button_down(mditab_t* mditab, UINT keys, short x, short y)
+                 SetCapture(mditab->win);
+                 mditab->mouse_captured = TRUE;
+                 mditab->btn_pressed = TRUE;
++				mditab->btn_pressed_cold = FALSE;
+                 mditab_invalidate_button(mditab, btn_id);
+ 
+                 switch(btn_id) {
+@@ -2467,13 +2696,23 @@ mditab_left_button_up(mditab_t* mditab, UINT keys, short x, short y)
+ 
+     if(mditab->btn_pressed) {
+         mditab->btn_pressed = FALSE;
+-        if(mditab->item_hot < 0  &&  mditab->item_hot != ITEM_HOT_NONE) {
+-            int btn_id = mditab_hot_button(mditab);
+-            if(btn_id == BTNID_CLOSE  &&  mditab->item_selected >= 0)
+-                mditab_close_item(mditab, mditab->item_selected);
+-            mditab_invalidate_button(mditab, btn_id);
+-            goto out;
+-        }
++		if(!mditab->btn_pressed_cold) {
++			if(mditab->item_hot < 0  &&  mditab->item_hot != ITEM_HOT_NONE) {
++				int btn_id = mditab_hot_button(mditab);
++				if(btn_id == BTNID_CLOSE  &&  mditab->item_selected >= 0)
++					mditab_close_item(mditab, mditab->item_selected);
++				else if(btn_id == BTNID_OPEN)
++					mditab_notify_open_item(mditab);
++				mditab_invalidate_button(mditab, btn_id);
++				goto out;
++			}
++			else if(mditab->item_hot >= 0  &&  mditab->item_hot != ITEM_HOT_NONE  &&  mditab->hot_itemclose) {
++				mditab_close_item(mditab, mditab->item_hot);
++				mditab_reset_hot(mditab);
++				mditab_mouse_move(mditab, x, y); //Refresh hot item
++				goto out;
++			}
++		}
+     }
+ 
+     mc_send_notify(mditab->notify_win, mditab->win, NM_CLICK);
+@@ -2527,6 +2766,24 @@ mditab_middle_button_up(mditab_t* mditab, UINT keys, short x, short y)
+     mditab->item_mclose = -1;
+ }
+ 
++static int
++mditab_wheel(mditab_t* mditab, short delta, short x, short y)
++{
++    MC_MTHITTESTINFO hti;
++
++    if(!(mditab->style & MC_MTS_MOUSESCROLL))
++        return 1;
++
++    hti.pt.x = x;
++    hti.pt.y = y;
++	if (mditab_hit_test(mditab, &hti, FALSE) >= 0)
++	{
++        mditab_scroll_rel(mditab, -delta);
++		return 0;
++	}
++	return 1;
++}
++
+ static void
+ mditab_change_focus(mditab_t* mditab)
+ {
+@@ -2607,6 +2864,14 @@ mditab_exstyle_changed(mditab_t* mditab, STYLESTRUCT* ss)
+     }
+ }
+ 
++static void
++mditab_customstyle_changed(mditab_t* mditab, STYLESTRUCT* ss)
++{
++	mditab->custom_style = ss->styleNew;
++	if ((ss->styleOld & MC_MTCS_OPENBTN) != (ss->styleNew & MC_MTCS_OPENBTN))
++        mditab_update_layout(mditab, FALSE);
++}
++
+ static void
+ mditab_set_tooltip_pos(mditab_t* mditab)
+ {
+@@ -2854,6 +3119,15 @@ mditab_proc(HWND win, UINT msg, WPARAM wp, LPARAM lp)
+         case MC_MTM_GETTOOLTIPS:
+             return (LRESULT) mditab->tooltip_win;
+ 
++		case MC_MTM_SETCUSTOMSTYLE:
++			{
++				STYLESTRUCT ss;
++				ss.styleNew = (DWORD) wp;
++				ss.styleOld = mditab->custom_style;
++				mditab_customstyle_changed(mditab, &ss);
++			}
++			return 0;
++
+         case WM_NCHITTEST:
+             return mditab_nchittest(mditab, GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
+ 
+@@ -2870,9 +3144,17 @@ mditab_proc(HWND win, UINT msg, WPARAM wp, LPARAM lp)
+             return 0;
+ 
+         case WM_MBUTTONUP:
+-            mditab_middle_button_up(mditab, wp, GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
++			mditab_middle_button_up(mditab, wp, GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
+             return 0;
+ 
++		case WM_MOUSEWHEEL:
++			{
++				POINT coords = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
++				if (!ScreenToClient(win, &coords))
++					return 1;
++				return mditab_wheel(mditab, GET_WHEEL_DELTA_WPARAM(wp), coords.x, coords.y);
++			}
++
+         case WM_RBUTTONUP:
+             mc_send_notify(mditab->notify_win, win, NM_RCLICK);
+             return 0;
+diff --git a/src/module.c b/src/module.c
+index e903e6f..ec60bc5 100644
+--- a/src/module.c
++++ b/src/module.c
+@@ -144,44 +144,44 @@ module_fini_modules(module_t** modules, int n)
+ /* Module definition */
+ 
+ DEFINE_MODULE(mc);
+-DEFINE_MODULE(button);
+-DEFINE_MODULE(chart);
++//DEFINE_MODULE(button);
++//DEFINE_MODULE(chart);
+ DEFINE_MODULE(dwm);
+-DEFINE_MODULE(expand);
+-DEFINE_MODULE(grid);
+-DEFINE_MODULE(html);
+-DEFINE_MODULE(imgview);
++//DEFINE_MODULE(expand);
++//DEFINE_MODULE(grid);
++//DEFINE_MODULE(html);
++//DEFINE_MODULE(imgview);
+ DEFINE_MODULE(mditab);
+-DEFINE_MODULE(menubar);
++//DEFINE_MODULE(menubar);
+ DEFINE_MODULE(theme);
+ DEFINE_MODULE(treelist);
+ 
+ 
+ /* Public interfaces of exposed modules */
+ 
+-static module_t* mod_button_deps[] = { &mod_mc, &mod_theme, &mod_button };
+-DEFINE_PUBLIC_IFACE(button, Button, mod_button_deps)
++//static module_t* mod_button_deps[] = { &mod_mc, &mod_theme, &mod_button };
++//DEFINE_PUBLIC_IFACE(button, Button, mod_button_deps)
+ 
+-static module_t* mod_chart_deps[] = { &mod_mc, &mod_theme, &mod_chart };
+-DEFINE_PUBLIC_IFACE(chart, Chart, mod_chart_deps)
++//static module_t* mod_chart_deps[] = { &mod_mc, &mod_theme, &mod_chart };
++//DEFINE_PUBLIC_IFACE(chart, Chart, mod_chart_deps)
+ 
+-static module_t* mod_expand_deps[] = { &mod_mc, &mod_theme, &mod_expand };
+-DEFINE_PUBLIC_IFACE(expand, Expand, mod_expand_deps)
++//static module_t* mod_expand_deps[] = { &mod_mc, &mod_theme, &mod_expand };
++//DEFINE_PUBLIC_IFACE(expand, Expand, mod_expand_deps)
+ 
+-static module_t* mod_grid_deps[] = { &mod_mc, &mod_theme, &mod_grid };
+-DEFINE_PUBLIC_IFACE(grid, Grid, mod_grid_deps)
++//static module_t* mod_grid_deps[] = { &mod_mc, &mod_theme, &mod_grid };
++//DEFINE_PUBLIC_IFACE(grid, Grid, mod_grid_deps)
+ 
+-static module_t* mod_html_deps[] = { &mod_mc, &mod_theme, &mod_html };
+-DEFINE_PUBLIC_IFACE(html, Html, mod_html_deps)
++//static module_t* mod_html_deps[] = { &mod_mc, &mod_theme, &mod_html };
++//DEFINE_PUBLIC_IFACE(html, Html, mod_html_deps)
+ 
+-static module_t* mod_imgview_deps[] = { &mod_mc, &mod_imgview };
+-DEFINE_PUBLIC_IFACE(imgview, ImgView, mod_imgview_deps)
++//static module_t* mod_imgview_deps[] = { &mod_mc, &mod_imgview };
++//DEFINE_PUBLIC_IFACE(imgview, ImgView, mod_imgview_deps)
+ 
+ static module_t* mod_mditab_deps[] = { &mod_mc, &mod_dwm, &mod_mditab };
+ DEFINE_PUBLIC_IFACE(mditab, Mditab, mod_mditab_deps)
+ 
+-static module_t* mod_menubar_deps[] = { &mod_mc, &mod_theme, &mod_menubar };
+-DEFINE_PUBLIC_IFACE(menubar, Menubar, mod_menubar_deps)
++//static module_t* mod_menubar_deps[] = { &mod_mc, &mod_theme, &mod_menubar };
++//DEFINE_PUBLIC_IFACE(menubar, Menubar, mod_menubar_deps)
+ 
+ static module_t* mod_theme_deps[] = { &mod_mc, &mod_theme };
+ DEFINE_PUBLIC_IFACE(theme, Theme, mod_theme_deps)
+diff --git a/src/treelist.c b/src/treelist.c
+index 06d8980..00f8574 100644
+--- a/src/treelist.c
++++ b/src/treelist.c
+@@ -93,6 +93,8 @@ struct treelist_item_tag {
+     WORD expanding_notify_in_progress : 1;
+     /* If set, then ->subitems[] is alloc'ed and valid, otherwise ->callback_map */
+     WORD has_alloced_subitems         : 1;
++	//Amount of selections in the sub tree (including this item).
++	unsigned int subtree_selected_count;
+ };
+ 
+ /* Iterator over ALL items of the control */
+@@ -198,6 +200,8 @@ struct treelist_tag {
+     treelist_item_t* hotbutton_item;
+     int scrolled_level;               /* level of the scrolled_item */
+     DWORD style                  : 16;
++	DWORD multiselect_children   :  1;
++	DWORD always_focused         :  1;
+     DWORD no_redraw              :  1;
+     DWORD unicode_notifications  :  1;
+     DWORD rtl                    :  1;
+@@ -213,7 +217,7 @@ struct treelist_tag {
+     WORD item_height;
+     WORD item_indent;
+     SHORT hot_col;
+-    WORD scroll_y;                    /* in rows */
++    int scroll_y;                    /* in rows */
+     int scroll_x;                     /* in pixels */
+     int scroll_x_max;
+     unsigned int selected_count;
+@@ -473,15 +477,32 @@ treelist_first_selected(treelist_t* tl)
+     if(tl->selected_count == 0)
+         return NULL;
+ 
+-    if(tl->selected_count == 1)
++	if((!(tl->style & MC_TLS_MULTISELECT) || !tl->multiselect_children)
++		&& tl->selected_count == 1)
+         return tl->selected_last;
+ 
+     ret = NULL;
+-    walk = tl->selected_last;
++	walk = tl->multiselect_children ? tl->root_head : tl->selected_last;
+     while(walk != NULL) {
+         if(walk->state & MC_TLIS_SELECTED)
+             ret = walk;
+-        walk = walk->sibling_prev;
++		if(tl->multiselect_children) {
++			if(ret != NULL)
++				break;
++			if(walk->subtree_selected_count > 0 && walk->child_head) {
++				walk = walk->child_head;
++			}
++			else if(!walk->sibling_next) {
++				walk = walk->parent;
++				if (walk)
++					walk = walk->sibling_next;
++			}
++			else {
++				walk = walk->sibling_next;
++			}
++		}
++		else
++			walk = walk->sibling_prev;
+     }
+ 
+     return ret;
+@@ -490,12 +511,35 @@ treelist_first_selected(treelist_t* tl)
+ static treelist_item_t*
+ treelist_next_selected(treelist_t* tl, treelist_item_t* item)
+ {
+-    if(tl->selected_count <= 1)
++	if (!(tl->style & MC_TLS_MULTISELECT))
+         return NULL;    /* treelist_first_selected() already returned all selected items. */
+-
+-    do {
+-        item = item->sibling_next;
+-    } while(item != NULL && !(item->state & MC_TLIS_SELECTED));
++	if(tl->multiselect_children)
++	{
++		do {
++			unsigned int nSelectedChildren = item->subtree_selected_count;
++			if (item->state & MC_TLIS_SELECTED)
++				nSelectedChildren--;
++			if(item->child_head && nSelectedChildren > 0)
++				item = item->child_head; //Visit the children only if there are selected ones.
++			else {
++				//Get the next sibling (or an ancestor's sibling).
++				treelist_item_t* curit = item;
++				item = NULL;
++				do {
++					if(curit->sibling_next) {
++						item = curit->sibling_next;
++						break;
++					}
++				} while(curit = curit->parent);
++			}
++		} while(item != NULL && !(item->state & MC_TLIS_SELECTED));
++	}
++	else
++	{
++		do {
++			item = item->sibling_next;
++		} while(item != NULL && !(item->state & MC_TLIS_SELECTED));
++	}
+ 
+     return item;
+ }
+@@ -966,9 +1010,9 @@ treelist_custom_draw_item_state(treelist_t* tl, treelist_item_t* item)
+     UINT state = 0;
+ 
+     if(item->state & MC_TLIS_SELECTED) {
+-        if(tl->focus)
++		if(item == tl->selected_last  &&  tl->focus)
+             state |= CDIS_FOCUS | CDIS_SELECTED;
+-        else if(tl->style & MC_TLS_SHOWSELALWAYS)
++		else if(tl->always_focused || (tl->style & MC_TLS_SHOWSELALWAYS))
+             state |= CDIS_SELECTED;
+     }
+     if(item == tl->hot_item)
+@@ -1100,7 +1144,7 @@ treelist_paint(void* control, HDC dc, RECT* dirty, BOOL erase)
+             } else if(item->state & MC_TLIS_SELECTED) {
+                 if(item == tl->hot_item)
+                     state = TREIS_HOTSELECTED;
+-                else if(tl->focus)
++                else if(tl->focus || tl->always_focused)
+                     state = TREIS_SELECTED;
+                 else
+                     state = TREIS_SELECTEDNOTFOCUS;
+@@ -1132,7 +1176,7 @@ treelist_paint(void* control, HDC dc, RECT* dirty, BOOL erase)
+                     ((tl->style & MC_TLS_SHOWSELALWAYS) || tl->focus)  &&
+                     ((tl->style & MC_TLS_FULLROWSELECT) || col_ix == 0);
+             if(paint_selected  &&  !theme_treeitem_defined) {
+-                if(tl->focus) {
++                if(tl->focus || tl->always_focused) {
+                     subitem_text_color = GetSysColor(COLOR_HIGHLIGHTTEXT);
+                     subitem_bk_color = GetSysColor(COLOR_HIGHLIGHT);
+                 } else {
+@@ -1213,7 +1257,7 @@ treelist_paint(void* control, HDC dc, RECT* dirty, BOOL erase)
+ 
+                 /* Calculate label rectangle */
+                 mc_rect_copy(&label_rect, &subitem_rect);
+-                treelist_label_rect(tl, dc, item->text, DT_LEFT, &label_rect,
++				treelist_label_rect(tl, dc, dispinfo.text, DT_LEFT, &label_rect,
+                                     &padding_h, &padding_v);
+ 
+                 /* Paint background of the main item. We expand it to all
+@@ -1232,7 +1276,7 @@ treelist_paint(void* control, HDC dc, RECT* dirty, BOOL erase)
+                         r = &label_rect;
+                     if(subitem_bk_color != MC_CLR_NONE)
+                         ExtTextOut(dc, 0, 0, ETO_OPAQUE, r, NULL, 0, NULL);
+-                    if(paint_selected  &&  tl->focus)
++					if(paint_selected  &&  tl->focus  &&  tl->selected_last == item)
+                         DrawFocusRect(dc, r);
+                 }
+ 
+@@ -1423,7 +1467,7 @@ treelist_hit_test(treelist_t* tl, MC_TLHITTESTINFO* info)
+             item_rect.left += img_w + ITEM_PADDING_H;
+         }
+ 
+-        treelist_label_rect(tl, dc, item->text, DT_LEFT, &item_rect,
++        treelist_label_rect(tl, dc, dispinfo.text, DT_LEFT, &item_rect,
+                             &ignored, &ignored);
+ 
+         treelist_free_dispinfo(tl, item, &dispinfo);
+@@ -1672,11 +1716,22 @@ treelist_set_sel(treelist_t* tl, treelist_item_t* item)
+             return;
+         }
+     }
++	
++	//Redraw the last selected item since the focus will likely move.
++	if(tl->focus  &&  tl->selected_last != NULL)
++	{
++		treelist_invalidate_item(tl, tl->selected_last, (tl->style & MC_TLS_FULLROWSELECT) ? -1 : 0, 0);
++	}
+ 
+     /* Remove old selection */
+     if(tl->selected_count > 0) {
++		treelist_item_t* parentit;
+         if(tl->selected_count == 1) {
+             tl->selected_last->state &= ~MC_TLIS_SELECTED;
++			parentit = tl->selected_last;
++			do {
++				parentit->subtree_selected_count = 0;
++			} while ((parentit = parentit->parent) && parentit->subtree_selected_count > 0);
+ 
+             if(do_single_expand) {
+                 /* Collapse the old selection and all its ancestors. */
+@@ -1691,11 +1746,13 @@ treelist_set_sel(treelist_t* tl, treelist_item_t* item)
+                 treelist_invalidate_item(tl, tl->selected_last, col_ix, 0);
+         } else {
+             treelist_item_t* it;
+-
+             for(it = treelist_first_selected(tl); it != NULL; it = treelist_next_selected(tl, it)) {
+                 if(it == item)
+                     continue;
+-
++				parentit = it;
++				do {
++					parentit->subtree_selected_count--;
++				} while (parentit = parentit->parent);
+                 it->state &= ~MC_TLIS_SELECTED;
+                 if(!tl->no_redraw)
+                     treelist_invalidate_item(tl, it, col_ix, 0);
+@@ -1707,7 +1764,14 @@ treelist_set_sel(treelist_t* tl, treelist_item_t* item)
+     tl->selected_last = item;
+     tl->selected_from = item;
+     if(item != NULL) {
++		treelist_item_t* parentit;
++
+         item->state |= MC_TLIS_SELECTED;
++
++		parentit = item;
++		do {
++			parentit->subtree_selected_count = 1;
++		} while (parentit = parentit->parent);
+         tl->selected_count = 1;
+ 
+         if(do_single_expand) {
+@@ -1723,6 +1787,7 @@ treelist_set_sel(treelist_t* tl, treelist_item_t* item)
+         if(!tl->no_redraw)
+             treelist_invalidate_item(tl, item, col_ix, 0);
+     } else {
++		//subtree_selected_count already set to 0.
+         tl->selected_count = 0;
+     }
+ 
+@@ -1749,12 +1814,13 @@ treelist_toggle_sel(treelist_t* tl, treelist_item_t* item)
+     /* If we toggle in the tree elsewhere then the current selection is, we may
+      * need to unselect old selection. Function treelist_set_sel() already
+      * knows how to do that. */
+-    if(do_select  &&  tl->selected_count > 0  &&  tl->selected_last->parent != item->parent) {
++    if(do_select  &&  tl->selected_count > 0  &&  !tl->multiselect_children  &&  tl->selected_last->parent != item->parent) {
+         treelist_set_sel(tl, item);
+         return;
+     }
+ 
+     if(do_select) {
++		treelist_item_t* parentit;
+         /* Send MC_TLN_SELCHANGING */
+         if(treelist_sel_notify(tl, MC_TLN_SELCHANGING, NULL, item) != 0) {
+             TREELIST_TRACE("treelist_toggle_sel: Denied by app.");
+@@ -1762,10 +1828,21 @@ treelist_toggle_sel(treelist_t* tl, treelist_item_t* item)
+         }
+ 
+         item->state |= MC_TLIS_SELECTED;
++		parentit = item;
++		do {
++			parentit->subtree_selected_count++;
++		} while (parentit = parentit->parent);
+         tl->selected_count++;
+         tl->selected_last = item;
+     } else {
++		treelist_item_t* parentit;
++
+         item->state &= ~MC_TLIS_SELECTED;
++
++		parentit = item;
++		do {
++			parentit->subtree_selected_count--;
++		} while (parentit = parentit->parent);
+         if(tl->selected_last == item) {
+             /* We must ensure ->selected_last is set properly. */
+             if(tl->selected_count == 1)
+@@ -1790,11 +1867,12 @@ treelist_set_sel_range(treelist_t* tl, treelist_item_t* item)
+     treelist_item_t* item0 = tl->selected_from;
+     treelist_item_t* item1;
+     int col_ix;
++	unsigned int accum_selection_count;
+ 
+     MC_ASSERT(tl->style & MC_TLS_MULTISELECT);
+     MC_ASSERT(item != NULL);
+ 
+-    if(item0 == NULL  ||  item0->parent != item->parent) {
++	if(item0 == NULL  ||  (!tl->multiselect_children && item0->parent != item->parent)) {
+         treelist_set_sel(tl, item);
+         return;
+     }
+@@ -1803,19 +1881,54 @@ treelist_set_sel_range(treelist_t* tl, treelist_item_t* item)
+ 
+     /* Make sure there is no item selected before the item0 or item
+      * (whatever comes first). */
+-    it = (item->parent ? item->parent->child_head : tl->root_head);
++	it = ((item->parent && !tl->multiselect_children) ? item->parent->child_head : tl->root_head);
++	accum_selection_count = 0; //Counts the amount of deselected items in the current parent's subtree.
+     while(it != item0  &&  it != item) {
+         if(it->state & MC_TLIS_SELECTED) {
+             it->state &= ~MC_TLIS_SELECTED;
++			MC_ASSERT(it->subtree_selected_count > 0);
++			it->subtree_selected_count--;
+             tl->selected_count--;
++			accum_selection_count++;
+             if(!tl->no_redraw)
+                 treelist_invalidate_item(tl, it, col_ix, 0);
+         }
+-        it = it->sibling_next;
+-    }
++		if(tl->multiselect_children && it->child_head) {
++			if(accum_selection_count > 0) {
++				//Subtract the amount of removed selections among siblings from the parent counters now,
++				// since the accumulated selection count needs to be reset to iterate through children.
++				treelist_item_t* parentit = it;
++				while (parentit = parentit->parent) {
++					MC_ASSERT(parentit->subtree_selected_count >= accum_selection_count);
++					parentit->subtree_selected_count -= accum_selection_count;
++				}
++				accum_selection_count = 0; //New subtree is fresh
++			}
++			it = it->child_head;
++		}
++		else {
++			MC_ASSERT(it->subtree_selected_count == 0);
++			while(!it->sibling_next) {
++				it = it->parent;
++				MC_ASSERT(it->subtree_selected_count == accum_selection_count);
++				//The current subtree did not contain the first item to select, 
++				// i.e. all of its items have been deselected.
++				it->subtree_selected_count = 0;
++			}
++			it = it->sibling_next;
++		}
++    }
++	if(accum_selection_count > 0) {
++		treelist_item_t* parentit = it;
++		while (parentit = parentit->parent) {
++			MC_ASSERT(parentit->subtree_selected_count >= accum_selection_count);
++			parentit->subtree_selected_count -= accum_selection_count;
++		}
++	}
+ 
+     /* Make sure all items between item0 and item1 are selected. */
+     item1 = (it == item ? item0 : item);
++	accum_selection_count = 0; //Counts the amount of selected items in the current parent's subtree.
+     while(TRUE) {
+         if(!(it->state & MC_TLIS_SELECTED)) {
+             /* Send MC_TLN_SELCHANGING */
+@@ -1823,31 +1936,106 @@ treelist_set_sel_range(treelist_t* tl, treelist_item_t* item)
+                 TREELIST_TRACE("treelist_set_sel_range: Denied by app.");
+             } else {
+                 it->state |= MC_TLIS_SELECTED;
++				it->subtree_selected_count++;
+                 tl->selected_count++;
++				accum_selection_count++;
+                 if(!tl->no_redraw)
+                     treelist_invalidate_item(tl, it, col_ix, 0);
+             }
+         }
+ 
+         if(it == item1) {
+-            it = it->sibling_next;
++			if(it != NULL  &&  accum_selection_count > 0) {
++				treelist_item_t* parentit = it;
++				while (parentit = parentit->parent) {
++					parentit->subtree_selected_count += accum_selection_count;
++				}
++			}
++			if(tl->multiselect_children && it->child_head)
++				it = it->child_head;
++			else if(it->sibling_next)
++				it = it->sibling_next;
++			else if(tl->multiselect_children) { 
++				while (it = it->parent) {
++					if (it->sibling_next) {
++						it = it->sibling_next;
++						break;
++					}
++				}
++			}
+             break;
+         }
+ 
+-        it = it->sibling_next;
++		if(tl->multiselect_children && (it->state & MC_TLIS_EXPANDED) && it->child_head) {
++			if(accum_selection_count > 0) {
++				//Add the amount of removed selections among siblings to the parent counters now,
++				// since the accumulated selection count needs to be reset to iterate through children.
++				treelist_item_t* parentit = it;
++				while (parentit = parentit->parent) {
++					parentit->subtree_selected_count += accum_selection_count;
++				}
++				accum_selection_count = 0; //New subtree is fresh
++			}
++			it = it->child_head;
++		}
++		else {
++			//Find the next sibling to select, or look for an ancestor's sibling.
++			//(The end item <item1> is not a parent of the current item <it>,
++			//  as the current item would otherwise be after the end).
++			while(!it->sibling_next) {
++				it = it->parent;
++				//Also add the selection counter to the parents.
++				it->subtree_selected_count += accum_selection_count;
++			}
++			it = it->sibling_next;
++		}
+     }
+ 
+     /* Make sure no more items are selected */
++	accum_selection_count = 0; //Counts the amount of deselected items in the current parent's subtree.
+     while(it != NULL) {
+         if(it->state & MC_TLIS_SELECTED) {
+             it->state &= ~MC_TLIS_SELECTED;
++			MC_ASSERT(it->subtree_selected_count > 0);
++			it->subtree_selected_count--;
+             tl->selected_count--;
++			accum_selection_count++;
+             if(!tl->no_redraw)
+                 treelist_invalidate_item(tl, it, col_ix, 0);
+         }
+-        it = it->sibling_next;
+-    }
+-
++		if(tl->multiselect_children && it->child_head) {
++			if(accum_selection_count > 0) {
++				//Subtract the amount of removed selections among siblings from the parent counters now,
++				// since the accumulated selection count needs to be reset to iterate through children.
++				treelist_item_t* parentit = it;
++				while (parentit = parentit->parent) {
++					MC_ASSERT(parentit->subtree_selected_count >= accum_selection_count);
++					parentit->subtree_selected_count -= accum_selection_count;
++				}
++				accum_selection_count = 0; //New subtree is fresh
++			}
++			it = it->child_head;
++		}
++		else {
++			while(!it->sibling_next) {
++				it = it->parent;
++				if (!it)
++					break;
++				MC_ASSERT(it->subtree_selected_count >= accum_selection_count);
++				it->subtree_selected_count -= accum_selection_count;
++			}
++			if(it)
++				it = it->sibling_next;
++		}
++    }
++	//No parents are left to remove accum_selection_count from.
++	
++	if(tl->focus) {
++		//Redraw the last selected and the new selected item for the focus border.
++		treelist_invalidate_item(tl, item, (tl->style & MC_TLS_FULLROWSELECT) ? -1 : 0, 0);
++		if(tl->selected_last != NULL  &&  tl->selected_last != item)
++			treelist_invalidate_item(tl, tl->selected_last, (tl->style & MC_TLS_FULLROWSELECT) ? -1 : 0, 0);
++	}
+     tl->selected_last = item;
+ 
+     treelist_sel_notify(tl, MC_TLN_SELCHANGED, NULL, NULL);
+@@ -2278,11 +2466,21 @@ treelist_key_down(treelist_t* tl, int key)
+ 
+         switch(key) {
+             case VK_UP:
+-                if(sel->sibling_prev)
++				if(tl->multiselect_children) {
++					treelist_item_t* new_sel = item_prev_displayed(sel);
++					if (new_sel != NULL)
++						sel = new_sel;
++				}
++                else if(sel->sibling_prev)
+                     sel = sel->sibling_prev;
+                 break;
+             case VK_DOWN:
+-                if(sel->sibling_next)
++				if(tl->multiselect_children) {
++					treelist_item_t* new_sel = item_next_displayed(sel, &ignored);
++					if (new_sel != NULL)
++						sel = new_sel;
++				}
++                else if(sel->sibling_next)
+                     sel = sel->sibling_next;
+                 break;
+         }
+@@ -2801,7 +2999,7 @@ treelist_insert_item(treelist_t* tl, MC_TLINSERTSTRUCT* insert, BOOL unicode)
+     }
+     if(item_data->fMask & MC_TLIF_TEXT) {
+         if(item_data->pszText == MC_LPSTR_TEXTCALLBACK) {
+-            item->text = item_data->pszText;
++            text = item_data->pszText;
+         } else {
+             text = mc_str(item_data->pszText, (unicode ? MC_STRW : MC_STRA), MC_STRT);
+             if(MC_ERR(text == NULL  &&  item_data->pszText != NULL)) {
+@@ -2855,6 +3053,7 @@ treelist_insert_item(treelist_t* tl, MC_TLINSERTSTRUCT* insert, BOOL unicode)
+     }
+     item->expanding_notify_in_progress = 0;
+     item->has_alloced_subitems = 0;
++	item->subtree_selected_count = 0;
+ 
+     if(parent != NULL) {
+         parent_displayed = item_is_displayed(parent);
+@@ -2906,6 +3105,131 @@ err_alloc_item:
+     return NULL;
+ }
+ 
++static BOOL
++treelist_move_item(treelist_t* tl, treelist_item_t* item, treelist_item_t* after)
++{
++	treelist_item_t* parent;
++	treelist_item_t** pParent_child_head;
++	treelist_item_t** pParent_child_tail;
++	treelist_item_t* prev;
++	int y_pre;
++	BOOL parent_displayed;
++	BOOL displayed;
++	if(MC_ERR(item == NULL || item == MC_TLI_FIRST || item == MC_TLI_LAST))
++	{
++        MC_TRACE("treelist_move_item: hItem is NULL or MC_TLI_FIRST or MC_TLI_LAST");
++        SetLastError(ERROR_INVALID_PARAMETER);
++        return FALSE;
++	}
++	y_pre = (!tl->no_redraw) ? treelist_get_item_y(tl, item, FALSE) : 0;
++	parent = item->parent;
++
++    if(after == MC_TLI_FIRST) {
++        prev = NULL;
++    } else if(after == MC_TLI_LAST  ||  after == NULL) {
++        prev = (parent ? parent->child_tail : tl->root_tail);
++    } else {
++        prev = after;
++        if(MC_ERR(prev->parent != parent)) {
++            MC_TRACE("treelist_move_item: Parents of hItem and hInsertAfter do not match.");
++            SetLastError(ERROR_INVALID_PARAMETER);
++            return FALSE;
++        }
++    }
++	if(item == prev  ||  item->sibling_prev == prev  ||  (prev == NULL  &&  item == (parent ? parent->child_head : tl->root_head))) {
++		/* Item is not moved */
++		return TRUE;
++	}
++	/* Unlink item from its neighbours */
++	if(item->sibling_prev != NULL) {
++		/* Does not overwrite prev->sibling_next, since item->sibling_prev != prev */
++		item->sibling_prev->sibling_next = item->sibling_next;
++	}
++	if(item->sibling_next != NULL) {
++		/* May overwrite prev->sibling_prev */
++		item->sibling_next->sibling_prev = item->sibling_prev;
++	}
++	pParent_child_head = (parent ? &parent->child_head : &tl->root_head);
++	pParent_child_tail = (parent ? &parent->child_tail : &tl->root_tail);
++	/* If the item was the tail or head, update the reference */
++	if((parent ? parent->child_tail : tl->root_tail) == item) {
++		*pParent_child_tail = item->sibling_prev;
++	}
++	if((parent ? parent->child_head : tl->root_head) == item) {
++		*pParent_child_head = item->sibling_next;
++	}
++	if(prev == NULL) {
++		/* Moved to the front */
++		item->sibling_prev = NULL;
++		item->sibling_next = (parent ? parent->child_head : tl->root_head);
++		item->sibling_next->sibling_prev = item;
++		*pParent_child_head = item;
++	}
++	else {
++		/* Link the item in between prev and prev->sibling_next */
++		item->sibling_prev = prev;
++		item->sibling_next = prev->sibling_next;
++		if(prev->sibling_next != NULL) {
++			prev->sibling_next->sibling_prev = item;
++		}
++		prev->sibling_next = item;
++		if(prev == (parent ? parent->child_tail : tl->root_tail)) {
++			/* Update the tail reference */
++			*pParent_child_tail = item;
++		}
++	}
++	
++    if(parent != NULL) {
++        parent_displayed = item_is_displayed(parent);
++        displayed = (parent_displayed && (parent->state & MC_TLIS_EXPANDED));
++    } else {
++        parent_displayed = FALSE;
++        displayed = TRUE;
++    }
++    /* Refresh */
++    if(!tl->no_redraw) {
++        if(displayed) {
++            RECT rect;
++			int item_height = 0;
++			int y_post = treelist_get_item_y(tl, item, FALSE);
++			{
++				/* Retrieve the height of the item plus its expanded descendants */
++				treelist_item_t* it = item; int ignored;
++				while(TRUE) {
++					if(it == item->sibling_next || it == NULL)
++						break;
++
++					item_height += tl->item_height;
++					it = item_next_displayed(it, &ignored);
++				}
++			}
++
++            GetClientRect(tl->win, &rect);
++
++			if(y_pre < y_post) {
++				rect.top = y_pre;
++				rect.bottom = y_post + item_height;
++			}
++			else {
++				rect.top = y_post;
++				rect.bottom = y_pre + item_height;
++			}
++            if(rect.top < 0) {
++                treelist_item_t* scrolled_item;
++                int ignored;
++
++                scrolled_item = treelist_scrolled_item(tl, &ignored);
++                rect.top = treelist_get_item_y(tl, scrolled_item, TRUE);
++            }
++			if(rect.bottom >= rect.top) {
++				InvalidateRect(tl->win, &rect, TRUE);
++			}
++        }
++    }
++    treelist_refresh_hot(tl);
++	return TRUE;
++}
++
+ static BOOL
+ treelist_set_item(treelist_t* tl, treelist_item_t* item, MC_TLITEM* item_data,
+                   BOOL unicode)
+@@ -3057,63 +3381,73 @@ treelist_delete_notify(treelist_t* tl, treelist_item_t* item, treelist_item_t* s
+ static int
+ treelist_delete_item_helper(treelist_t* tl, treelist_item_t* item, BOOL displayed)
+ {
+-    treelist_item_t* next_to_delete;
++	treelist_item_t *stop_item = item->parent; //Either NULL or an actual parent.
++	unsigned int hidden_depth = displayed ? 0 : 1; //Depth in the tree from the last visible item.
+     int deleted_visible = 0;
+-
+-    while(item != NULL) {
+-        /* Handle deletion of children */
++	while(item != stop_item) {
++        /* Delete children first */
+         if(item->child_head != NULL) {
+-            if(displayed  &&  !(item->state & MC_TLIS_EXPANDED)) {
+-                /* Unlike this item, all the children are hidden. So recurse
+-                 * without getting the return value. */
+-                treelist_delete_item_helper(tl, item->child_head, FALSE);
+-                next_to_delete = item->sibling_next;
+-            } else {
+-                /* Artificially "upgrade" the children to our level (small
+-                 * trick to avoid recursion). */
+-                item->child_tail->sibling_next = item->sibling_next;
+-                next_to_delete = item->child_head;
+-            }
+-        } else {
+-            next_to_delete = item->sibling_next;
+-        }
+-
+-        /* The deletion of the item */
+-        if(item->has_alloced_subitems) {
+-            int i;
+-            for(i = 0; i < tl->col_count - 1; i++) {
+-                if(item->subitems[i] != NULL  &&
+-                   item->subitems[i] != MC_LPSTR_TEXTCALLBACK)
+-                    free(item->subitems[i]);
+-            }
+-            free(item->subitems);
+-        }
+-        if(item->text != NULL  &&  item->text != MC_LPSTR_TEXTCALLBACK)
+-            free(item->text);
+-
+-        /* Update any selection information now */
+-        if(item->state & MC_TLIS_SELECTED)
+-            treelist_toggle_sel(tl, item);
+-        if(item == tl->selected_from)
+-            tl->selected_from = NULL;
+-
+-        free(item);
+-
+-        deleted_visible++;
+-
+-        item = next_to_delete;
+-    }
+-
++			treelist_item_t* next_item;
++            if(hidden_depth == 0  &&  !(item->state & MC_TLIS_EXPANDED))
++				hidden_depth = 1;
++			else if(hidden_depth > 0)
++				hidden_depth++;
++			next_item = item->child_head;
++			//Make sure the parent will not iterate over its by then deleted child list.
++			item->child_head = NULL;
++			item = next_item;
++		}
++		else {
++			treelist_item_t* parent_item = item->parent;
++			treelist_item_t* sibling_item = item->sibling_next;
++			/* The deletion of the item */
++			if(item->has_alloced_subitems) {
++				int i;
++				for(i = 0; i < tl->col_count - 1; i++) {
++					if(item->subitems[i] != NULL  &&
++					   item->subitems[i] != MC_LPSTR_TEXTCALLBACK)
++						free(item->subitems[i]);
++				}
++				free(item->subitems);
++			}
++			if(item->text != NULL  &&  item->text != MC_LPSTR_TEXTCALLBACK)
++				free(item->text);
++
++			/* Update any selection information now */
++			if(item->state & MC_TLIS_SELECTED)
++				treelist_toggle_sel(tl, item);
++			if(item == tl->selected_from)
++				tl->selected_from = NULL;
++
++			free(item);
++			if(hidden_depth == 0)
++				deleted_visible++;
++
++			if(sibling_item != NULL)
++				item = sibling_item;
++			else {
++				/* Go upwards since this sub tree is freed */
++				if (hidden_depth > 0)
++					hidden_depth--; //Moving closer to the last visible item.
++				item = parent_item;
++			}
++		}
++	}
++	
+     return deleted_visible;
+ }
+ 
+ static BOOL
+-treelist_delete_item(treelist_t* tl, treelist_item_t* item)
++treelist_delete_item(treelist_t* tl, treelist_item_t* item, BOOL notify)
+ {
+     DWORD old_displayed_items = tl->displayed_items;
++	unsigned int old_selected_count = tl->selected_count;
+     treelist_item_t* parent;
+     treelist_item_t* sibling_prev;
+     treelist_item_t* sibling_next;
++	WORD state;
++	unsigned int subtree_selected_count;
++	BOOL resetSelection;
+     BOOL is_displayed;
+     int y;
+     int displayed_del_count;
+@@ -3126,7 +3460,8 @@ treelist_delete_item(treelist_t* tl, treelist_item_t* item)
+             treelist_set_sel(tl, NULL);
+             tl->scrolled_item = NULL;
+ 
+-            treelist_delete_notify(tl, tl->root_head, NULL);
++			if (notify)
++				treelist_delete_notify(tl, tl->root_head, NULL);
+             treelist_delete_item_helper(tl, tl->root_head, FALSE);
+             tl->root_head = NULL;
+             tl->root_tail = NULL;
+@@ -3145,32 +3480,50 @@ treelist_delete_item(treelist_t* tl, treelist_item_t* item)
+     parent = item->parent;
+     sibling_prev = item->sibling_prev;
+     sibling_next = item->sibling_next;
++	state = item->state;
++	subtree_selected_count = item->subtree_selected_count;
+     is_displayed = item_is_displayed(item);
+     y = (is_displayed ? treelist_get_item_y(tl, item, TRUE) : -1);
+ 
++	resetSelection = FALSE;
++
+     /* If the deleted subtree contains selection, we must choose another
+      * selection. */
+     if(!(tl->style & MC_TLS_MULTISELECT)) {
+-        if(item_is_ancestor(item, tl->selected_last)) {
+-            if(item->sibling_next)
+-                treelist_set_sel(tl, item->sibling_next);
+-            else if(item->sibling_prev)
+-                treelist_set_sel(tl, item->sibling_prev);
++        //if(item_is_ancestor(item, tl->selected_last)) {
++		if(subtree_selected_count > 0) {
++			resetSelection = TRUE;
++            if(sibling_next)
++                treelist_set_sel(tl, sibling_next);
++            else if(sibling_prev)
++                treelist_set_sel(tl, sibling_prev);
+             else
+                 treelist_set_sel(tl, parent);
+         }
+     } else {
+-        if(item->state & MC_TLIS_SELECTED) {
+-            if(tl->selected_count == 1)
++        if(state & MC_TLIS_SELECTED) {
++			MC_ASSERT(tl->selected_count >= subtree_selected_count);
++            if(tl->selected_count == subtree_selected_count)
++			{
++				resetSelection = TRUE;
+                 treelist_set_sel(tl, parent);
++			}
+         } else if(tl->selected_last != NULL) {
+-            if(item_is_ancestor(item, tl->selected_last->parent))
++			if(subtree_selected_count >= tl->selected_count)
++			{
++				resetSelection = TRUE;
+                 treelist_set_sel(tl, parent);
++			}
++			//if(item_is_ancestor(item, tl->selected_last->parent))
++            //	treelist_set_sel(tl, parent);
+         }
+     }
+ 
+-    /* This should be very last notification about the item and its subtree. */
+-    treelist_delete_notify(tl, item, item);
++	if (notify)
++	{
++		/* This should be very last notification about the item and its subtree. */
++		treelist_delete_notify(tl, item, item);
++	}
+ 
+     /* Disconnect the item from the tree. */
+     if(item->sibling_prev) {
+@@ -3262,6 +3615,19 @@ treelist_delete_children(treelist_t* tl, treelist_item_t* item)
+     /* This should be very last notification about the item and its subtree. */
+     treelist_delete_notify(tl, item->child_head, item);
+ 
++	if (item->subtree_selected_count > 0)
++	{
++		unsigned int removed_sel_count = item->subtree_selected_count;
++		treelist_item_t* parentit;
++		if (item->state & MC_TLIS_SELECTED)
++			removed_sel_count--; //<item> is selected but will not be removed.
++		//Subtract the amount of selected children from the parent counters.
++		parentit = item;
++		do {
++			parentit->subtree_selected_count -= removed_sel_count;
++		} while (parentit = parentit->parent);
++	}
++
+     /* Disconnect the children from the tree. */
+     child_head = item->child_head;
+     item->child_head = NULL;
+@@ -3841,7 +4207,7 @@ treelist_create(treelist_t* tl)
+ static void
+ treelist_destroy(treelist_t* tl)
+ {
+-    treelist_delete_item(tl, NULL);
++    treelist_delete_item(tl, NULL, TRUE);
+ 
+     if(tl->tooltip_win != NULL) {
+         if(!(tl->style & MC_TLS_NOTOOLTIPS))
+@@ -3938,6 +4304,26 @@ treelist_proc(HWND win, UINT msg, WPARAM wp, LPARAM lp)
+             return (LRESULT) treelist_insert_item(tl, (MC_TLINSERTSTRUCT*) lp,
+                                      (msg == MC_TLM_INSERTITEMW));
+ 
++        case MC_TLM_INSERTITEMSW:
++        case MC_TLM_INSERTITEMSA:
++		{
++			treelist_item_t *ret = NULL;
++			int i;
++			for (i = 0; i < (int) wp; i++)
++			{
++				ret = treelist_insert_item(tl, &((MC_TLINSERTSTRUCT*) lp)[i],
++                                     (msg == MC_TLM_INSERTITEMSW));
++				if (!ret)
++				{
++					for (; i < (int) wp; i++)
++						((MC_TLINSERTSTRUCT*) lp)[i].hParent = NULL;
++					break;
++				}
++				((MC_TLINSERTSTRUCT*) lp)[i].hParent = (MC_HTREELISTITEM) ret;
++			}
++			return (LRESULT) ret;
++		}
++
+         case MC_TLM_SETITEMW:
+         case MC_TLM_SETITEMA:
+             return treelist_set_item(tl, (treelist_item_t*) wp, (MC_TLITEM*) lp,
+@@ -3949,7 +4335,11 @@ treelist_proc(HWND win, UINT msg, WPARAM wp, LPARAM lp)
+                                      (msg == MC_TLM_GETITEMW));
+ 
+         case MC_TLM_DELETEITEM:
+-            return treelist_delete_item(tl, (treelist_item_t*) lp);
++			return treelist_delete_item(tl, (treelist_item_t*) lp,
++                                     (wp & MC_TLDI_NONOTIFY) ? FALSE : TRUE);
++
++		case MC_TLM_MOVEITEM:
++			return treelist_move_item(tl, (treelist_item_t*) wp, (treelist_item_t*) lp);
+ 
+         case MC_TLM_SETITEMHEIGHT:
+             return treelist_set_item_height(tl, (int) wp, TRUE);
+@@ -4022,6 +4412,11 @@ treelist_proc(HWND win, UINT msg, WPARAM wp, LPARAM lp)
+         case MC_TLM_GETTOOLTIPS:
+             return (LRESULT) tl->tooltip_win;
+ 
++		case MC_TLM_SETCUSTOMSTYLE:
++			tl->multiselect_children = (wp & 1) ? 1 : 0;
++			tl->always_focused = (wp & 2) ? 1 : 0;
++			return 0;
++
+         case WM_NOTIFY:
+             if(((NMHDR*)lp)->hwndFrom == tl->header_win)
+                 return treelist_header_notify(tl, (NMHEADER*) lp);

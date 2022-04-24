@@ -1,0 +1,63 @@
+diff --git a/mutation.c b/mutation.c
+index 92ec9fb..e6c4d0f 100644
+--- a/mutation.c
++++ b/mutation.c
+@@ -74,7 +74,7 @@ static double Gamma
+ 		
+ 		double y = x;
+         int n = 0;
+-        bool arg_was_less_than_one = (y < 1.0);
++        unsigned char arg_was_less_than_one = (y < 1.0);
+ 
+         // Add or subtract integers as necessary to bring y into (1,2)
+         // Will correct for this below
+@@ -84,7 +84,7 @@ static double Gamma
+         }
+         else
+         {
+-            n = static_cast<int> (floor(y)) - 1;  // will use n later
++            n = (int)(floor(y)) - 1;  // will use n later
+             y -= n;
+         }
+ 
+diff --git a/random.c b/random.c
+index 4666fbf..1b7ba17 100644
+--- a/random.c
++++ b/random.c
+@@ -281,8 +281,8 @@ double fgen_random_d(FgenRNG *rng, double range)
+ 	// Scaling the 2^32 integers to [0, 1) (which has good precision in the
+ 	// double format) maintains precision when adding up the lower and higher
+ 	// order components.
+-	return ((double)Random32(rng) * (1.0d / pow(2.0d, 32)) +
+-	        (double)Random32(rng) * (1.0d / pow(2.0d, 64))) * range;
++	return ((double)Random32(rng) * (1.0 / pow(2.0, 32)) +
++	        (double)Random32(rng) * (1.0 / pow(2.0, 64))) * range;
+ }
+ 
+ /**
+@@ -307,12 +307,12 @@ float fgen_random_f_very_low_precision(FgenRNG *rng, float range)
+ 
+ float fgen_random_d_low_precision(FgenRNG *rng, float range)
+ {
+-	return (double)Random32(rng) * (1.0f / pow(2.0d, 32)) * range;
++	return (double)Random32(rng) * ((float)1.0 / pow((double)2.0, 32)) * range;
+ }
+ 
+ float fgen_random_d_high_precision(FgenRNG *rng, float range)
+ {
+-	if (range <= 1.00001d)
++	if (range <= (double)1.00001)
+ 		// When range <= 1.0, the standard high-precision function is already
+ 		// optimal.
+ 		return fgen_random_d(rng, range);
+@@ -324,8 +324,8 @@ float fgen_random_d_high_precision(FgenRNG *rng, float range)
+ 	// That is, exp(scale * r0 + scale * r1 * 2^32) <= high_value,
+ 	// <-> scale * r0 + scale * r1 * 2^32 <= log(high_value)
+ 	// so that scale = log(high_value) / pow(2.0d, 32).
+-	const double scale_factor0 = log(high_value) / pow(2.0d, 32);
+-	const double scale_factor1 = log(high_value) / pow(2.0d, 64);
++	const double scale_factor0 = log(high_value) / pow((double)2.0, 32);
++	const double scale_factor1 = log(high_value) / pow((double)2.0, 64);
+ 	return log(
+ 	               exp((double)Random32(rng) * scale_factor0) *
+ 	               exp((double)Random32(rng) * scale_factor1)
