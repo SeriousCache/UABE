@@ -1,9 +1,10 @@
-# Unity Asset Bundle Extractor
-Unity .assets and AssetBundle editor
+# Asset Bundle Extractor
+.assets and AssetBundle editor.  
+Not affiliated with Unity Technologies.
 
-UABE is an editor for Unity 3.4+/4/5/2017-2021.3 .assets and AssetBundle files. It can create standalone mod installers from changes to .assets and/or bundles.
+UABE is an editor for 3.4+/4/5/2017-2021.3 .assets and AssetBundle files. It can create standalone mod installers from changes to .assets and/or bundles.
 
-There are multiple plugins to convert Unity assets from/to common file formats :
+There are multiple plugins to convert assets from/to common file formats :
 - The Texture plugin can export and import .png and .tga files (Texture2D only) and decode&encode most texture formats used by Unity.
 - The TextAsset plugin can export and import .txt files.
 - The AudioClip plugin can export uncompressed .wav files from Unity 5+ AudioClip assets using FMOD, .m4a files from WebGL builds and Unity 4 sound files.

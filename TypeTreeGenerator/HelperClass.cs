@@ -47,9 +47,9 @@ namespace TypeTreeGenerator
 				TypeDefinition curBaseType = type;
 				while (curBaseType != null)
 				{
-					foreach (TypeReference curInterfaceRef in curBaseType.Interfaces)
+					foreach (InterfaceImplementation curInterfaceImpl in curBaseType.Interfaces)
 					{
-						TypeDefinition interfaceDef = curInterfaceRef.Resolve();
+						TypeDefinition interfaceDef = curInterfaceImpl.InterfaceType.Resolve();
 						if (interfaceDef == null)
 							continue;
 						if (interfaceDef.Equals(baseType))

@@ -190,7 +190,7 @@ ASSETSTOOLS_API QWORD AssetTypeValueField::Write(IAssetsWriter *pWriter, QWORD f
 			SwapEndians_(dwValueTmp);
 		pWriter->Write(filePos, 4, &dwValueTmp); filePos+=4;
 		pWriter->Write(filePos, curStrLen, strVal); filePos+=curStrLen;
-		if ((this->templateField->children.size() > 0) && this->templateField->children[0].align)
+		if ((this->templateField->children.size() == 1) && this->templateField->children[0].align)
 			doPadding = true;
 	}
 	else if (this->value != NULL
@@ -215,6 +215,8 @@ ASSETSTOOLS_API QWORD AssetTypeValueField::Write(IAssetsWriter *pWriter, QWORD f
 				filePos = this->pChildren[i]->Write(pWriter, filePos, bigEndian);
 			}
 		}
+		if ((this->templateField->children.size() == 1) && this->templateField->children[0].align)
+			doPadding = true; //For special case: String overwritten with ByteArray value.
 	}
 	else if (this->childrenCount > 0)
 	{

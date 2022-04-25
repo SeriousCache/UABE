@@ -35,10 +35,6 @@ namespace TypeTreeGenerator
         static Logger logger;
         public static void Main(string[] args)
         {
-            /*args = new string[]{ "-f", "E:\\Programme\\SteamLibrary\\SteamApps\\common\\7 Days To Die\\7DaysToDie_Data\\Managed\\Assembly-CSharp.dll",
-                                "-f", "E:\\Programme\\SteamLibrary\\SteamApps\\common\\7 Days To Die\\7DaysToDie_Data\\Managed\\Assembly-CSharp-firstpass.dll"};*/
-            //args = new string[] { "-f", @"P:\Downloads\users_assetbundle-demo\demo\build9 test\test_Data\Managed\Assembly-CSharp.dll" };
-            //args = new string[] { "-f", @"P:\Programme\Unity 5.6.0f3\Editor\Data\Managed\UnityEngine.dll", "-f", @"P:\Downloads\UABEHelp31032018_Assembly-CSharp_RefFix.dll", "-c", "UnityTest.BoolComparer" };
             if (args.Length == 0)
             {
                 Console.Out.WriteLine("TypeTreeGenerator Parameters (evaluated from first to last) :");
