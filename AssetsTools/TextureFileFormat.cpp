@@ -1443,13 +1443,22 @@ bool MakeNextMipmapLevel_RGBA32(const void *_inBuf, void *_outBuf, unsigned int 
 	return true;
 }
 
-static rgba_surface ispc_texcomp_prepare_surface_RGBA32(void* pRGBA32Buf, unsigned int curWidth, unsigned int curHeight,
-	std::unique_ptr<uint8_t[]> &pExtendedBuffer, unsigned int numOutChannels=4, unsigned int channelBits=8)
+inline rgba_surface ispc_texcomp_prepare_surface_RGBA32(void* pRGBA32Buf, unsigned int curWidth, unsigned int curHeight,
+	std::unique_ptr<uint8_t[]> &pExtendedBuffer, unsigned int numOutChannels=4, unsigned int channelBits=8,
+	std::function<void(const uint8_t, uint8_t*)> convert = {})
 {
-	if (numOutChannels == 0 || numOutChannels >= 4)
+	if (!convert)
+	{
+		convert = [channelBits](const uint8_t valInU8, uint8_t* valOut)
+		{
+			for (unsigned int iBy = 0; iBy < channelBits / 8; ++iBy)
+				valOut[iBy] = valInU8;
+		};
+	}
+	if (numOutChannels == 0 || numOutChannels > 4)
 		throw std::invalid_argument("ispc_texcomp_prepare_surface_RGBA32: numOutChannels should be in [1,4]");
-	if (channelBits != 8 && channelBits != 16)
-		throw std::invalid_argument("ispc_texcomp_prepare_surface_RGBA32: channelBits must be either 8 or 16");
+	if ((channelBits & 7) != 0)
+		throw std::invalid_argument("ispc_texcomp_prepare_surface_RGBA32: channelBits must be a multiple of 8");
 	if (curWidth > (unsigned int)std::numeric_limits<int>::max()
 		|| curHeight > (unsigned int)std::numeric_limits<int>::max()
 		|| (curWidth * 4 * sizeof(uint8_t)) > (unsigned int)std::numeric_limits<int>::max())
@@ -1459,7 +1468,7 @@ static rgba_surface ispc_texcomp_prepare_surface_RGBA32(void* pRGBA32Buf, unsign
 
 	unsigned int extendedWidth = (curWidth + 3) & (~3);
 	unsigned int extendedHeight = (curHeight + 3) & (~3);
-	if (curWidth != extendedWidth || curHeight != extendedHeight || numOutChannels != 4)
+	if (curWidth != extendedWidth || curHeight != extendedHeight || numOutChannels != 4 || channelBits != 8)
 	{
 		pExtendedBuffer.reset(new uint8_t[extendedWidth * extendedHeight * numOutChannels * (channelBits/8)]);
 		//Copy the pixels, but only the first <numOutChannels> bytes per input pixel.
@@ -1471,8 +1480,7 @@ static rgba_surface ispc_texcomp_prepare_surface_RGBA32(void* pRGBA32Buf, unsign
 			//Copy the respective channel; if channelBits=16,
 			// replicate the channel value for each output byte (e.g. 0x1F -> 0x1F1F).
 			for (unsigned int iCh = 0; iCh < numOutChannels; ++iCh)
-				for (unsigned int iBy = 0; iBy < channelBits/8; ++iBy)
-					pOut[iCh * channelBits/8 + iBy] = pIn[iCh];
+				convert(pIn[iCh], &pOut[iCh * channelBits / 8]);
 		}
 		surfaceOut.width = extendedWidth;
 		surfaceOut.height = extendedHeight;
@@ -1642,8 +1650,13 @@ void RGBA32_ToCompressed(TextureFile *pTex, void *pOutBuf, void *pRGBA32Buf, QWO
 					break;
 				}
 				std::unique_ptr<uint8_t[]> pExtendedBuffer;
-				//BC6H uses r,g,b with 16bit each; the alpha channel is present in the inputs but ignored.
-				rgba_surface surface = ispc_texcomp_prepare_surface_RGBA32(pRGBA32Buf, curWidth, curHeight, pExtendedBuffer, 4, 16);
+				//BC6H uses r,g,b with FP16 each; the alpha channel is present in the inputs but ignored.
+				rgba_surface surface = ispc_texcomp_prepare_surface_RGBA32(pRGBA32Buf, curWidth, curHeight, pExtendedBuffer, 4, 16,
+					[](uint8_t valInU8, uint8_t* valOutHalf)
+					{
+						HalfFloat result; result.toHalf((float)valInU8 / 255.0f);
+						*(uint16_t*)valOutHalf = result.half;
+					});
 				size_t texLen = GetCompressedTextureDataSize(surface.width, surface.height, (TextureFormat)pTex->m_TextureFormat);
 				if (outputSize >= texLen)
 				{
