@@ -891,7 +891,7 @@ const std::string& AssetImportTask::getName()
 }
 TaskResult AssetImportTask::execute(TaskProgressManager& progressManager)
 {
-	unsigned int progressRange = static_cast<unsigned int>(std::min<size_t>(assets.size(), 10000));
+	unsigned int progressRange = static_cast<unsigned int>(std::max<size_t>(std::min<size_t>(assets.size(), 10000), 1));
 	size_t assetsPerProgressStep = assets.size() / progressRange;
 	constexpr size_t assetsPerDescUpdate = 8;
 	progressManager.setCancelable();
