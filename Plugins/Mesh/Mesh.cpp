@@ -626,7 +626,7 @@ public:
 
 				//Contains the normals data without sign bit (the bit vectors are unsigned);
 				//The m_NormalSigns value has the sign bit of the third component, z.
-				//The length of the normal vector |v| = sqrt(x²+y²+z²) = 1²; z is not stored, so z = sqrt(1²-x²-y²).
+				//The length of the normal vector |v| = sqrt(xÂ²+yÂ²+zÂ²) = 1Â²; z is not stored, so z = sqrt(1Â²-xÂ²-yÂ²).
 				if (mesh.m_CompressedMesh.m_Normals.m_NumItems)
 					bitsPerVertex += mesh.m_CompressedMesh.m_Normals.m_BitSize *
 					(mesh.m_CompressedMesh.m_Normals.m_NumItems / totalVertexCount); //shuold be m_BitSize*2
@@ -834,24 +834,43 @@ public:
 		}
 		else
 		{
-			unsigned int vertexDim = 3;
-			unsigned int uvCount = 0;
-			bool hasNormals = false;
-			bool hasNormalSigns = false;
-			/*bool hasFloatColors = false;
-			bool has32BitColors = false;*/
+			unsigned int vertexDim = 0;
+			unsigned int vertexCount = 0;
+
 			if (mesh.m_VertexData.m_VertexCount > 0)
 			{
 				vertexDim = (mesh.m_CompressedMesh.m_Vertices.m_NumItems / mesh.m_VertexData.m_VertexCount);
-				uvCount = (mesh.m_CompressedMesh.m_UV.m_NumItems / mesh.m_VertexData.m_VertexCount) / 2;
-				hasNormals = mesh.m_CompressedMesh.m_Normals.m_NumItems != 0 &&
-					(mesh.m_CompressedMesh.m_Normals.m_NumItems / mesh.m_VertexData.m_VertexCount) == 2;
-				hasNormalSigns = (mesh.m_CompressedMesh.m_NormalSigns.m_NumItems / mesh.m_CompressedMesh.m_Normals.m_NumItems) == 2;
-				/*hasFloatColors = mesh.m_CompressedMesh.m_FloatColors.m_NumItems != 0 &&
-					(mesh.m_CompressedMesh.m_FloatColors.m_NumItems / mesh.m_VertexData.m_VertexCount) == 4;
-				has32BitColors = mesh.m_CompressedMesh.m_Colors.m_NumItems != 0 &&
-					(mesh.m_CompressedMesh.m_Colors.m_NumItems / mesh.m_VertexData.m_VertexCount) == 4;*/
+				vertexCount = mesh.m_VertexData.m_VertexCount;
 			}
+			else
+			{
+				//m_VertexData.m_VertexCount definitiviely tells us dimension and vertex count, but some mesh imports appear to omit it.
+				//We'll make an educated guess at dimension based on whether or not the bounding box is flat along any axis, and calculate vertex count accordingly.
+				if (mesh.m_LocalAABB.m_Center.x == mesh.m_LocalAABB.m_Extent.x ||
+					mesh.m_LocalAABB.m_Center.y == mesh.m_LocalAABB.m_Extent.y ||
+					mesh.m_LocalAABB.m_Center.z == mesh.m_LocalAABB.m_Extent.z)
+				{
+					vertexDim = 2;
+				}
+				else
+				{
+					vertexDim = 3;
+				}
+
+				vertexCount = mesh.m_CompressedMesh.m_Vertices.m_NumItems / vertexDim;
+			}
+
+			unsigned int uvCount = (mesh.m_CompressedMesh.m_UV.m_NumItems / vertexCount) / 2;
+			bool hasNormals = mesh.m_CompressedMesh.m_Normals.m_NumItems != 0 &&
+				(mesh.m_CompressedMesh.m_Normals.m_NumItems / vertexCount) == 2;
+			bool hasNormalSigns = (mesh.m_CompressedMesh.m_NormalSigns.m_NumItems / mesh.m_CompressedMesh.m_Normals.m_NumItems) == 2;
+
+			/*bool hasFloatColors = false;
+			bool has32BitColors = false;
+			hasFloatColors = mesh.m_CompressedMesh.m_FloatColors.m_NumItems != 0 &&
+				(mesh.m_CompressedMesh.m_FloatColors.m_NumItems / vertexCount) == 4;
+			has32BitColors = mesh.m_CompressedMesh.m_Colors.m_NumItems != 0 &&
+				(mesh.m_CompressedMesh.m_Colors.m_NumItems / vertexCount) == 4;*/
 			if (vertexDim < 2 || vertexDim > 3)
 			{
 				throw AssetUtilError(std::format("Expected vertex dimension 2 or 3 but got {}.", vertexDim));
