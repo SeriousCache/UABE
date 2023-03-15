@@ -1107,6 +1107,7 @@ ASSETSTOOLS_API bool AssetBundleFile::Unpack(IAssetsReader *pReader, IAssetsWrit
 			bundleHeader6.compressedSize = bundleHeader6.decompressedSize;
 			curUpFilePos = 0;
 			bundleHeader6.flags &= ~(0x3F);
+			bundleHeader6.flags &= ~(0x200); //No additional 16 byte data alignment.
 
 			if (bundleHeader6.flags & 0x100) //originally was UnityWeb
 				strcpy(bundleHeader6.signature, "UnityWeb");
@@ -2346,9 +2347,10 @@ ASSETSTOOLS_API bool AssetBundleFile::Write(IAssetsReader *pReader,
 		std::vector<AssetBundleBlockInfo06> blocks;
 		QWORD curFilePos = 0;
 		AssetBundleHeader06 header = this->bundleHeader6;
-		if (header.flags & 0x100)
-			strcpy(header.signature, "UnityWeb");
+		if ((header.flags & 0x100) && header.fileVersion == 6)
+			strcpy(header.signature, "UnityWeb"); //Is this accurate for all versions?
 		header.flags &= ~0x3F; //No directory/block list compression.
+		header.flags &= ~0x200; //No alignment of first block.
 		header.flags |= 0x40; //Has directory info.
 		header.Write(pWriter, curFilePos);
 		//Create dummy block info (we don't have exact sizes but have to assume that <= or > 4 GiB can be differentiated).

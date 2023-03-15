@@ -90,23 +90,29 @@ struct AssetBundleHeader06
 			return ret;
 		}
 	}
-	inline uint32_t GetFileDataOffset()
+	inline QWORD GetFileDataOffset()
 	{
-		uint32_t ret = 0;
+		QWORD ret = 0;
 		if (!strcmp(this->signature, "UnityArchive"))
 			return this->compressedSize;
-		else if (!strcmp(this->signature, "UnityFS") || !strcmp(this->signature, "UnityWeb"))
+		if (!strcmp(this->signature, "UnityFS") || !strcmp(this->signature, "UnityWeb"))
 		{
-			ret = (uint32_t)strlen(minPlayerVersion) + (uint32_t)strlen(fileEngineVersion) + 0x1A;
+			ret = (QWORD)strlen(minPlayerVersion) + (QWORD)strlen(fileEngineVersion) + 0x1A;
 			if (this->flags & 0x100)
 				ret += 0x0A;
 			else
-				ret += (uint32_t)strlen(signature) + 1;
+				ret += (QWORD)strlen(signature) + 1;
 			if (this->fileVersion >= 7)
-				ret = (ret + 15) & ~15; //16 byte alignment
+			{
+				ret = (ret + 15) & ~15; //16 byte alignment of list
+			}
 		}
 		if (!(this->flags & 0x80))
+		{
 			ret += this->compressedSize;
+			if (this->flags & 0x200)
+				ret = (ret + 15) & ~15; //16 byte alignment of first block
+		}
 		return ret;
 	}
 };
