@@ -4,6 +4,7 @@
 #include "resource.h"
 #include <windowsx.h>
 #include "../libStringConverter/convert.h"
+#include <format>
 
 static int GetTextExtent(HWND hListBox, const TCHAR* text)
 {
