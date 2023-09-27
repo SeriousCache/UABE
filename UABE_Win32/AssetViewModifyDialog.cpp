@@ -9,6 +9,7 @@
 #include "Win32PluginManager.h"
 #include <string>
 #include <WindowsX.h>
+#include <format>
 
 class AssetInstanceTask : public ITask
 {
