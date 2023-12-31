@@ -1,6 +1,6 @@
 set(WIN32_EXECUTABLE TRUE)
 
-add_executable (AssetBundleExtractor WIN32 "AssetBundleExtractor.cpp" AssetBundleExtractor.manifest Launcher.rc "resource.h")
+add_executable (AssetBundleExtractor WIN32 "AssetBundleExtractor.cpp" Launcher.rc "resource.h")
 
 target_link_libraries (AssetBundleExtractor LINK_PUBLIC UABE_Win32)
 
