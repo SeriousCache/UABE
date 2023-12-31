@@ -11,6 +11,7 @@
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
+#include <optional>
 
 //unique_ptr to a IAssetsReader with a deleter.
 typedef std::unique_ptr<IAssetsReader, void(*)(IAssetsReader*)> IAssetsReader_ptr;

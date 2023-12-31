@@ -683,7 +683,7 @@ void AssetExportJSONDumpTask::recursiveDumpAsset(IAssetsReader* pReader, AssetTy
 							break;
 						default:
 							if (strValue[i] < 0x20)
-								std::format_to(std::back_inserter(lineBuf), "\\u{:04u}", strValue[i]);
+                                std::vformat_to(std::back_inserter(lineBuf), "\\u{:04u}", std::make_format_args(strValue[i]));
 							break;
 						}
 						if (!lineBuf.empty())
@@ -710,7 +710,7 @@ void AssetExportJSONDumpTask::recursiveDumpAsset(IAssetsReader* pReader, AssetTy
 					if (i)
 						pDumpWriter->Write(2, ", ");
 					lineBuf.clear();
-					std::format_to(std::back_inserter(lineBuf), "{}", pByteArray->data[i]);
+                    std::vformat_to(std::back_inserter(lineBuf), "{}", std::make_format_args(pByteArray->data[i]));
 					outputLineBuf();
 				}
 				outputRawChars("]", 1);
